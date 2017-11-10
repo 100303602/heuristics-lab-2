@@ -1,0 +1,53 @@
+\documentclass[a4paper,usenames,dvipsnames,table]{report}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{color}
+\usepackage{booktabs}
+\usepackage[usenames, dvipsnames]{xcolor}
+\usepackage[top=2cm, margin=2.5cm]{geometry}
+\usepackage{titlepic}
+% \usepackage{eurosym}
+
+\graphicspath{{images/}}
+\newcommand{\warning}[2] {
+    \textcolor{red}{(#1) #2}
+}
+% \let\texteuro\euro
+
+
+
+
+\begin{document}
+
+% title configuration
+\title{
+    {\Huge \textbf{Lab assignment \#2: Logical Satisfiability and Heuristic Search\\}}
+    {\Large Heuristics \& Optimization 2017-2018 (Group 89)}
+}
+\author{
+    Álvaro Cáceres Muñoz ({\normalsize \href{mailto:100303602@alumnos.uc3m.es}{100303602@alumnos.uc3m.es}})\\
+    Guillermo Escobero Hernández ({\normalsize \href{mailto:100346060@alumnos.uc3m.es}{100346060@alumnos.uc3m.es}})\\
+}
+\date{}
+\titlepic{\includegraphics[width=0.5\textwidth]{uc3m.png}}
+
+
+
+
+\maketitle
+\tableofcontents
+\input{introduction}
+\input{models}
+\input{results}
+\input{conclusions}
+% back cover
+\newpage\null\thispagestyle{empty}\newpage
+
+\end{document}
