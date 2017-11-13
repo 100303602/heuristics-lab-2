@@ -28,14 +28,14 @@ import org.jacop.search.SmallestDomain;
 public class SATPacman {
 		
 	public static void main(String args[]) throws IOException {
-//	   Measure execution time
+        // Measure execution time
 		long startTime = System.currentTimeMillis();
 
-//	    Arguments provided by the user
+        // Arguments provided by the user
 		int ghosts = Integer.parseInt(args[1]);
 		final String filename =args[0] + ".lab";
 
-//	     0. Load the file and convert it into a list of lists
+        // 0. Load the file and convert it into a list of lists
 		File file = new File(filename);
 		Scanner scanner = new Scanner(file);
 		List<String> mapList= new ArrayList<String>();
@@ -53,13 +53,13 @@ public class SATPacman {
 		int rows = mapArray.length;
 		int cols = mapArray[0].length;
 
-// 		1. Create the store and the sat wrapper to encode the problem
+        // 1. Create the store and the sat wrapper to encode the problem
 		Store store = new Store();
 		SatWrapper satWrapper = new SatWrapper();
 		store.impose(satWrapper);
 
-//		2. Create the binary variables that represent the presence
-//		of pacman & ghosts in map
+        // 2. Create the binary variables that represent the presence
+        // of pacman & ghosts in map
 		BooleanVar pacmanVars[][] = new BooleanVar[rows][cols];
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
@@ -76,7 +76,7 @@ public class SATPacman {
 			}
 		}
 
-//		3. Collect all the variables for the SimpleSelect
+        // 3. Collect all the variables for the SimpleSelect
 		BooleanVar[] allVariables = new BooleanVar[(rows*cols)*(1+ghosts)];
 		int aux = 0;
 		for (int i = 0; i < rows; i++) {
@@ -94,7 +94,7 @@ public class SATPacman {
 			}
 		}
 
-// 		4. Register all the variables in the sat wrapper
+        // 4. Register all the variables in the sat wrapper
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
 				satWrapper.register(pacmanVars[i][j]);
@@ -108,7 +108,7 @@ public class SATPacman {
 			}
 		}
 
-// 		5. Obtain the non-negated literals out of the binary variables
+        // 5. Obtain the non-negated literals out of the binary variables
 		int pacmanLiterals [][] = new int[rows][cols];
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
@@ -132,9 +132,9 @@ public class SATPacman {
 		 * We express a negated literal as follows: -xLiteral
 		 * */
 
-//		6. Add all clauses
+        // 6. Add all clauses
 
-//		6.1.a) Pacman and ghosts can only be placed in empty cells
+        // 6.1.a) Pacman and ghosts can only be placed in empty cells
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
 				if (mapArray[i][j].equals('%') || mapArray[i][j].equals('O')) {
@@ -146,7 +146,7 @@ public class SATPacman {
 			}
 		}
 
-//		6.1.b) One ghost per row at most
+        // 6.1.b) One ghost per row at most
 		for (int g1 = 0; g1 < ghosts; g1++) {
 			for (int i = 0; i < rows; i++) {
 				for (int j = 0; j < cols; j++) {
@@ -161,40 +161,40 @@ public class SATPacman {
 			}
 		}
 
-//		6.1.c) No ghosts around Pacman
+        // 6.1.c) No ghosts around Pacman
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
 				for (int k = 0; k < ghosts; k++) {
-						if(j+1<cols){
-							addClause(satWrapper, -pacmanLiterals[i][j], -ghostLiterals[i][j+1][k]);
-						}
-						if(j-1>=0){
-							addClause(satWrapper, -pacmanLiterals[i][j], -ghostLiterals[i][j-1][k]);
-						}
-						if(i+1<rows){
-							addClause(satWrapper, -pacmanLiterals[i][j], -ghostLiterals[i+1][j][k]);
-						}
-						if(i+1<rows && j+1<cols){
-							addClause(satWrapper, -pacmanLiterals[i][j], -ghostLiterals[i+1][j+1][k]);
-						}
-						if(i+1<rows && j-1>=0){
-							addClause(satWrapper, -pacmanLiterals[i][j], -ghostLiterals[i+1][j-1][k]);
-						}
-						if(i-1>=0){
-							addClause(satWrapper, -pacmanLiterals[i][j], -ghostLiterals[i-1][j][k]);
-						}
-						if(i-1>=0 && j+1<cols){
-							addClause(satWrapper, -pacmanLiterals[i][j], -ghostLiterals[i-1][j+1][k]);
-						}
-						if(i-1>=0 && j-1>=0){
-							addClause(satWrapper, -pacmanLiterals[i][j], -ghostLiterals[i-1][j-1][k]);
-						}
+                    if(j+1<cols){
+                        addClause(satWrapper, -pacmanLiterals[i][j], -ghostLiterals[i][j+1][k]);
+                    }
+                    if(j-1>=0){
+                        addClause(satWrapper, -pacmanLiterals[i][j], -ghostLiterals[i][j-1][k]);
+                    }
+                    if(i+1<rows){
+                        addClause(satWrapper, -pacmanLiterals[i][j], -ghostLiterals[i+1][j][k]);
+                    }
+                    if(i+1<rows && j+1<cols){
+                        addClause(satWrapper, -pacmanLiterals[i][j], -ghostLiterals[i+1][j+1][k]);
+                    }
+                    if(i+1<rows && j-1>=0){
+                        addClause(satWrapper, -pacmanLiterals[i][j], -ghostLiterals[i+1][j-1][k]);
+                    }
+                    if(i-1>=0){
+                        addClause(satWrapper, -pacmanLiterals[i][j], -ghostLiterals[i-1][j][k]);
+                    }
+                    if(i-1>=0 && j+1<cols){
+                        addClause(satWrapper, -pacmanLiterals[i][j], -ghostLiterals[i-1][j+1][k]);
+                    }
+                    if(i-1>=0 && j-1>=0){
+                        addClause(satWrapper, -pacmanLiterals[i][j], -ghostLiterals[i-1][j-1][k]);
+                    }
 
 				}
 			}
 		}
 
-//		6.2.a) There must be at least one Pacman
+        // 6.2.a) There must be at least one Pacman
 		IntVec auxClause = new IntVec(satWrapper.pool);
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
@@ -203,13 +203,13 @@ public class SATPacman {
 		}
 		satWrapper.addModelClause(auxClause.toArray());
 
-//		6.2.b) There cannot be more than one Pacman
+        // 6.2.b) There cannot be more than one Pacman
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
 				for (int l = 0; l < rows; l++) {
 					for (int m = 0; m < cols; m++) {
 						if(!(i==l && j==m)) {
-//							A -> ~B => ~A v ~B
+                            // A -> ~B => ~A v ~B
 							addClause(satWrapper, -pacmanLiterals[i][j], -pacmanLiterals[l][m]);
 						}
 					}
@@ -217,7 +217,7 @@ public class SATPacman {
 			}
 		}
 
-//		6.2.c) There must be exactly the specified number of ghosts
+        // 6.2.c) There must be exactly the specified number of ghosts
 		IntVec[] auxClause2 = new IntVec[ghosts];
 		for (int k = 0; k < ghosts; k++) {
 			auxClause2[k] = new IntVec (satWrapper.pool);
@@ -229,7 +229,7 @@ public class SATPacman {
 			satWrapper.addModelClause(auxClause2[k].toArray());
 		}
 
-//		6.2.d) Pacman cannot be placed on the same cell of any ghost
+        // 6.2.d) Pacman cannot be placed on the same cell of any ghost
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
 				for (int k = 0; k < ghosts; k++) {
@@ -238,7 +238,7 @@ public class SATPacman {
 			}
 		}
 
-//		6.2.e) Ghosts cannot be placed on the same cell of any other ghost
+        // 6.2.e) Ghosts cannot be placed on the same cell of any other ghost
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
 				for (int k = 0; k < ghosts; k++) {
@@ -251,7 +251,7 @@ public class SATPacman {
 			}
 		}
 
-//		7. Solve the problem
+        // 7. Solve the problem
 	    Search<BooleanVar> search = new DepthFirstSearch<BooleanVar>();
 		SelectChoicePoint<BooleanVar> select = new SimpleSelect<BooleanVar>(allVariables, new SmallestDomain<BooleanVar>(), new IndomainMin<BooleanVar>());
 		Boolean result = search.labeling(store, select);
@@ -275,31 +275,28 @@ public class SATPacman {
 			for (int i = 0; i < rows; i++) {
 				for (int j = 0; j < cols; j++) {
 					System.out.print(results[i][j]);
-//					file.write(results[i][j]);
+                    // file.write(results[i][j]);
 				}
 				System.out.println();
-//				file.write('\n');
+                // file.write('\n');
 			}
 		} else{
 			System.out.println("*** No");
 		}
 		System.out.println();
-//		file.close()... hay que cerrar el archivo?
+        // file.close()... hay que cerrar el archivo?
 		
+        // Print results
 		System.out.println("---------------------");
 		System.out.println("Extra information");
-		
 		long endTime = System.currentTimeMillis();
 		long totalTime = endTime - startTime;
 		System.out.println("Map: " + args[0]);
 		System.out.println("#Ghosts: " + args[1]);
-		System.out.println("Execution time: " + 
-(totalTime/1000.0));
+		System.out.println("Execution time: " + (totalTime/1000.0));
 	}
 
-		
-		
-
+    // Adds a clause of 1 literal
 	public static void addClause(SatWrapper satWrapper, int literal1, int literal2){
 		IntVec clause = new IntVec(satWrapper.pool);
 		clause.add(literal1);
@@ -307,12 +304,14 @@ public class SATPacman {
 		satWrapper.addModelClause(clause.toArray());
 	}
 
+    // Adds a clause of 2 literals 
 	public static void addClause(SatWrapper satWrapper, int literal1){
 		IntVec clause = new IntVec(satWrapper.pool);
 		clause.add(literal1);
 		satWrapper.addModelClause(clause.toArray());
 	}
 
+    // Adds a clause of 3 literals 
 	public static void addClause(SatWrapper satWrapper, int literal1, int literal2, int literal3){
 		IntVec clause = new IntVec(satWrapper.pool);
 		clause.add(literal1);
