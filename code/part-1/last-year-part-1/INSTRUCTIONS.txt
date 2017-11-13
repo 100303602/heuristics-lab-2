@@ -1,0 +1,6 @@
+1. Compile code --> ./compile.sh
+2. Execute code --> ./run.sh <map_name> <number_of_ghosts>
+Example: ./run.sh 1default 3
+	* map: 1default (WITHOUT .lab extension)
+	* 3 ghosts
+

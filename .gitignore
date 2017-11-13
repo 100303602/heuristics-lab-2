@@ -1,0 +1,11 @@
+/deliverable/
+/report/*.pdf
+/report/*.aux
+/report/*.log
+/report/*.toc
+/report/*.out
+/code/**/jacop*.jar
+/code/**/*.class
+/docs/
+\#*\#
+*~
