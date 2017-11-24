@@ -1,4 +1,17 @@
 import java.io.*;
+import java.lang.reflect.Array;
+import java.util.*;
+
+import org.jacop.core.BooleanVar;
+import org.jacop.core.Store;
+import org.jacop.jasat.utils.structures.IntVec;
+import org.jacop.satwrapper.SatWrapper;
+import org.jacop.search.DepthFirstSearch;
+import org.jacop.search.IndomainMin;
+import org.jacop.search.Search;
+import org.jacop.search.SelectChoicePoint;
+import org.jacop.search.SimpleSelect;
+import org.jacop.search.SmallestDomain;
 
 public class SATParking {
 	class Car {
@@ -35,13 +48,12 @@ public class SATParking {
 		try {
 			FileReader fileReader = new FileReader(fileName);
 			BufferedReader bufferedReader = new BufferedReader(fileReader);
-
 			String header = bufferedReader.readLine();
 			M = Integer.parseInt(header.split(" ")[0]);
 			N = Integer.parseInt(header.split(" ")[1]);
 			board = new SATParking.Car[M][N];
-
-			System.out.println(m + " " + n);
+			
+			System.out.println(M + " " + N);
 			for(int i=0; i<M; i++) {
 				String line = bufferedReader.readLine();
 				for(int j=0; j<N; j++) {
@@ -133,7 +145,7 @@ public class SATParking {
 		int[][] catALiterals = new int[M][N];
 		int[][] catBLiterals = new int[M][N];
 		int[][] catCLiterals = new int[M][N];
-		int[][] adjCarsLiterals = new int[M][N][2];
+		int[][][] adjCarsLiterals = new int[M][N][2];
 
 		for (int i=0; i<M; i++) {
 			for (int j=0; j<N; j++) {
@@ -207,33 +219,32 @@ public class SATParking {
 		Character[][] results = new Character[M][N];
 		for (int i = 0; i < M; i++) {
 			for (int j = 0; j < N; j++) {
-				results[i][j] = board[i][j];
 				if(parkingLot[i][j].dom().value() == 1) {
-					results[i][j] = 'C';
+					results[i][j] = '>';
 				}
 			}
 		}
 
 		if(result) {
 			System.out.println("Solution: ");
-			for (int i = 0; i < m; i++) {
-				for (int j = 0; j < m; j++) {
+			for (int i = 0; i < M; i++) {
+				for (int j = 0; j < N; j++) {
 					System.out.println(results[i][j]);
 				}
 				System.out.println();
 			}
 		} else {
-			System.out.println("*** No")
+			System.out.println("*** No");
 		}
 		System.out.println();
 
 		System.out.println("---------------------");
 		System.out.println("Extra information");
 		long endTime = System.currentTimeMillis();
-		long totalTime = endTime - startTime;
+		//long totalTime = endTime - startTime;
 		System.out.println("Map: " + args[0]);
 		System.out.println("#Ghosts: " + args[1]);
-		System.out.println("Execution time: " + (totalTime/1000.0));
+		//System.out.println("Execution time: " + (totalTime/1000.0));
 	}
 
 
