@@ -61,11 +61,13 @@ public class SATParking {
 					board[i][j] = new Car(line.split(" ")[j].charAt(0), Character.getNumericValue(line.split(" ")[j].charAt(1)));
 				}
 			}
-			for(int i=0; i<M; i++) {
-				for(int j=0; j<N; j++) {
-					System.out.print(board[i][j]);
-				}
-			}
+
+//			for (int i=0; i<M; i++) {
+//				for (int j=0; j<N; j++) {
+//					System.out.print("(" + board[i][j].getCategory() + "," + board[i][j].getOrder() + ") ");
+//				}
+//				System.out.println();
+//			}
 		} catch(FileNotFoundException ex) {
 			System.out.println("File not found: '" + fileName + "'");
 		} catch(IOException ex) {
@@ -241,9 +243,12 @@ public class SATParking {
 		  }
 
 		// Solve the problem
-		Search<BooleanVar> search = new DepthFirstSearch<BooleanVar>();
-		SelectChoicePoint<BooleanVar> select = new SimpleSelect<BooleanVar>(allVariables, new SmallestDomain<BooleanVar>(), new IndomainMin<BooleanVar>());
-		Boolean result = search.labeling(store, select);
+//		Search<BooleanVar> search = new DepthFirstSearch<BooleanVar>();
+//		SelectChoicePoint<BooleanVar> select = new SimpleSelect<BooleanVar>(allVariables, new SmallestDomain<BooleanVar>(), new IndomainMin<BooleanVar>());
+//		Boolean result = search.labeling(store, select);
+
+		boolean result = store.consistency();
+		System.out.println("Is the formula consistent?" +  result);
 
 //		Character[][] results = new Character[M][N];
 //		for (int i = 0; i < M; i++) {
@@ -262,7 +267,6 @@ public class SATParking {
 			//	}
 			//	System.out.println();
 			//}
-			System.out.println(result);
 		} else {
 			System.out.println("*** No");
 		}
@@ -312,6 +316,4 @@ public class SATParking {
 		clause.add(literal4);
 		satWrapper.addModelClause(clause.toArray());
 	}
-
-
 }
