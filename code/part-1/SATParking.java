@@ -78,218 +78,148 @@ public class SATParking {
 		store.impose(satWrapper);
 
 		// Create the binary variables that represent the presence of cars in map
-		//BooleanVar[][] parkingLot = new BooleanVar[M][N];
-		//BooleanVar[][] catA = new BooleanVar[M][N];
-		//BooleanVar[][] catB = new BooleanVar[M][N];
-		//BooleanVar[][] catC = new BooleanVar[M][N];
-		BooleanVar[][][] otherCarCameAfterMe = new BooleanVar[M][N][2];
+		BooleanVar[][][] after = new BooleanVar[M][N][2];
 		BooleanVar[][][] sameCategory = new BooleanVar[M][N][2];
-		BooleanVar[][][] adjCarHasMoreCategory = new BooleanVar[M][N][2];
+		BooleanVar[][][] greaterCategory = new BooleanVar[M][N][2];
 
 		for(int i=0; i<M; i++) {
 			for(int j=0; j<N; j++) {
-				//parkingLot[i][j] = new BooleanVar(store, "Car(" + i + "," + j + ")");
-				//catA[i][j] = new BooleanVar(store, "A(" + i + "," + j + ")");
-				//catB[i][j] = new BooleanVar(store, "B(" + i + "," + j + ")");
-				//catC[i][j] = new BooleanVar(store, "C(" + i + "," + j + ")");
 				for (int k=0; k<2; k++) {
-					otherCarCameAfterMe[i][j][k] = new BooleanVar(store, "Car(" + i + "," + j + ")" + k);
-					sameCategory[i][j][k] = new BooleanVar(store, "Car(" + i + "," + j + ")" + k);
-					adjCarHasMoreCategory[i][j][k] = new BooleanVar(store, "Car(" + i + "," + j + ")" + k);
+					after[i][j][k] = new BooleanVar(store, "after(" + i + "," + j + "," + (k==0 ? "left" : "right") + ")");
+					sameCategory[i][j][k] = new BooleanVar(store, "sameCategory(" + i + "," + j + "," + (k==0 ? "left" : "right") + ")");
+					greaterCategory[i][j][k] = new BooleanVar(store, "greaterCategory(" + i + "," + j + "," + (k==0 ? "left" : "right") + ")");
 				}
 			}
 		}
 
 		// Collect all the variables for the SimpleSelect
 		BooleanVar[] allVariables = new BooleanVar[(M*N*6)];
-//		for (int i=0; i<(M*N*6); i++) {
-//			for(int j=0; j<M; j++) {
-//				for(int k=0; k<N; k++) {
-//					allVariables[i] = parkingLot[j][k];
-//				}
-//			}
-//			for(int j=0; j<M; j++) {
-//				for(int k=0; k<N; k++) {
-//					allVariables[i] = catA[j][k];
-//				}
-//			}
-// 			for(int j=0; j<M; j++) {
-// 				for(int k=0; k<N; k++) {
-// 					allVariables[i] = catB[j][k];
-// 				}
-// 			}
-// 			for(int j=0; j<M; j++) {
-// 				for(int k=0; k<N; k++) {
-// 					allVariables[i] = catC[j][k];
-// 				}
-// 			}
- 			int aux = 0;
-			for(int j=0; j<M; j++) {
-				for(int k=0; k<N; k++) {
-					for(int l=0; l<2; l++) {
-						allVariables[aux] = otherCarCameAfterMe[j][k][l];
-						aux++;
-					}
+		int aux = 0;
+		for(int j=0; j<M; j++) {
+			for(int k=0; k<N; k++) {
+				for(int l=0; l<2; l++) {
+					allVariables[aux] = after[j][k][l];
+					aux++;
 				}
 			}
-			for(int j=0; j<M; j++) {
-				for(int k=0; k<N; k++) {
-					for(int l=0; l<2; l++) {
-						allVariables[aux] = sameCategory[j][k][l];
-						aux++;
-					}
+		}
+		for(int j=0; j<M; j++) {
+			for(int k=0; k<N; k++) {
+				for(int l=0; l<2; l++) {
+					allVariables[aux] = sameCategory[j][k][l];
+					aux++;
 				}
 			}
-			for(int j=0; j<M; j++) {
-				for(int k=0; k<N; k++) {
-					for(int l=0; l<2; l++) {
-						allVariables[aux] = adjCarHasMoreCategory[j][k][l];
-						aux++;
-					}
+		}
+		for(int j=0; j<M; j++) {
+			for(int k=0; k<N; k++) {
+				for(int l=0; l<2; l++) {
+					allVariables[aux] = greaterCategory[j][k][l];
+					aux++;
 				}
 			}
-	//	}
+		}
 
 		// Register all the variables in the SatWrapper
 		for(int i=0; i<M; i++) {
 			for(int j=0; j<N; j++) {
-				//satWrapper.register(parkingLot[i][j]);
-				//satWrapper.register(catA[i][j]);
-				//satWrapper.register(catB[i][j]);
-				//satWrapper.register(catC[i][j]);
 				for(int k=0; k<2; k++) {
-					satWrapper.register(otherCarCameAfterMe[i][j][k]);
+					satWrapper.register(after[i][j][k]);
 					satWrapper.register(sameCategory[i][j][k]);
-					satWrapper.register(adjCarHasMoreCategory[i][j][k]);
+					satWrapper.register(greaterCategory[i][j][k]);
 				}
 			}
 		}
 
 		// Obtain non-negated literals out of the binary variables
-		//int[][] carLiterals  = new int[M][N];
-		//int[][] catALiterals = new int[M][N];
-		//int[][] catBLiterals = new int[M][N];
-		//int[][] catCLiterals = new int[M][N];
-		int[][][] adjCarHasMoreCategoryLiterals = new int [M][N][2];
+		int[][][] greaterCategoryLiterals = new int [M][N][2];
 		int[][][] sameCategoryLiterals = new int[M][N][2];
-		int[][][] otherCarCameAfterMeLiterals = new int[M][N][2];
+		int[][][] afterLiterals = new int[M][N][2];
 
 		for (int i=0; i<M; i++) {
 			for (int j=0; j<N; j++) {
 				if (board[i][j] != null) {
-					if((j < N-1) && (board[i][j].getOrder() < board[i][j+1].getOrder())) {
-						otherCarCameAfterMeLiterals[i][j][1] = satWrapper.cpVarToBoolVar(otherCarCameAfterMe[i][j][1], 1, true);
-					} else {
-						otherCarCameAfterMeLiterals[i][j][1] = satWrapper.cpVarToBoolVar(otherCarCameAfterMe[i][j][1], 1, false);
+					if (j < N-1) {
+						if(board[i][j].getOrder() < board[i][j+1].getOrder()) {
+							afterLiterals[i][j][1] = satWrapper.cpVarToBoolVar(after[i][j][1], 1, true);
+						} else {
+							afterLiterals[i][j][1] = satWrapper.cpVarToBoolVar(after[i][j][1], 0, true);
+						}
 					}
-
-					if((j > 0) && (board[i][j].getOrder() < board[i][j-1].getOrder())) {
-						otherCarCameAfterMeLiterals[i][j][0] = satWrapper.cpVarToBoolVar(otherCarCameAfterMe[i][j][0], 1, true);
-					} else {
-						otherCarCameAfterMeLiterals[i][j][0] = satWrapper.cpVarToBoolVar(otherCarCameAfterMe[i][j][0], 1, false);
-					}
-
 					if (j == N-1) {
-						otherCarCameAfterMeLiterals[i][j][1] = satWrapper.cpVarToBoolVar(otherCarCameAfterMe[i][j][1], 1, false);
+						afterLiterals[i][j][1] = satWrapper.cpVarToBoolVar(after[i][j][1], 0, true);
+						greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 1, true);		
+						sameCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(sameCategory[i][j][1], 1, true);
+					}
+					if (j > 0) {
+						if(board[i][j].getOrder() < board[i][j-1].getOrder()) {
+							afterLiterals[i][j][0] = satWrapper.cpVarToBoolVar(after[i][j][0], 1, true);
+						} else {
+							afterLiterals[i][j][0] = satWrapper.cpVarToBoolVar(after[i][j][0], 0, true);
+						}
 					}
 					if (j == 0) {
-						otherCarCameAfterMeLiterals[i][j][0] = satWrapper.cpVarToBoolVar(otherCarCameAfterMe[i][j][0], 1, false);
+						afterLiterals[i][j][0] = satWrapper.cpVarToBoolVar(after[i][j][0], 0, true);
+						greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 1, true);	
+						sameCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(sameCategory[i][j][0], 1, true);
 					}
-
 					if (j < N-1) {
 						switch(board[i][j].getCategory()) {
 							case 'A':
 								switch(board[i][j+1].getCategory()) {
 									case 'A': sameCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(sameCategory[i][j][1], 1, true);
-									case 'B': adjCarHasMoreCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(adjCarHasMoreCategory[i][j][1], 1, true);	
-									case 'C': adjCarHasMoreCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(adjCarHasMoreCategory[i][j][1], 1, true);
+									case 'B': greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 1, true);	
+									case 'C': greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 1, true);
 									default:
 								}
 						
 							case 'B':
 								switch(board[i][j+1].getCategory()) {	
-									case 'A': adjCarHasMoreCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(adjCarHasMoreCategory[i][j][1], 1, false);	
+									case 'A': greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 0, true);	
 									case 'B': sameCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(sameCategory[i][j][1], 1, true);
-									case 'C': adjCarHasMoreCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(adjCarHasMoreCategory[i][j][1], 1, true);
+									case 'C': greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 1, true);
 									default:
 								}
 
 							case 'C':
 								switch(board[i][j+1].getCategory()) {
-									case 'A': adjCarHasMoreCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(adjCarHasMoreCategory[i][j][1], 1, false);		
-									case 'B': adjCarHasMoreCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(adjCarHasMoreCategory[i][j][1], 1, false);	
+									case 'A': greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 0, true);		
+									case 'B': greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 0, true);	
 									case 'C': sameCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(sameCategory[i][j][1], 1, true);
 									default:
 								}
 						}
-					} else if (j == N-1) {
-						adjCarHasMoreCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(adjCarHasMoreCategory[i][j][1], 1, true);		
-						adjCarHasMoreCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(adjCarHasMoreCategory[i][j][1], 1, true);	
-						sameCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(sameCategory[i][j][1], 1, true);
 					}
 					if (j > 0) {
 						switch(board[i][j].getCategory()) {
 							case 'A':
 								switch(board[i][j-1].getCategory()) {
 									case 'A': sameCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(sameCategory[i][j][0], 1, true);
-									case 'B': adjCarHasMoreCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(adjCarHasMoreCategory[i][j][0], 1, true);	
-									case 'C': adjCarHasMoreCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(adjCarHasMoreCategory[i][j][0], 1, true);
+									case 'B': greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 1, true);	
+									case 'C': greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 1, true);
 									default:
 								}
 						
 							case 'B':
 								switch(board[i][j-1].getCategory()) {	
-									case 'A': adjCarHasMoreCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(adjCarHasMoreCategory[i][j][0], 1, false);	
+									case 'A': greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 0, true);	
 									case 'B': sameCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(sameCategory[i][j][0], 1, true);
-									case 'C': adjCarHasMoreCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(adjCarHasMoreCategory[i][j][0], 1, true);
+									case 'C': greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 1, true);
 									default:
 								}
 
 							case 'C':
 								switch(board[i][j-1].getCategory()) {
-									case 'A': adjCarHasMoreCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(adjCarHasMoreCategory[i][j][0], 1, false);		
-									case 'B': adjCarHasMoreCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(adjCarHasMoreCategory[i][j][0], 1, false);	
+									case 'A': greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 0, true);		
+									case 'B': greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 0, true);	
 									case 'C': sameCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(sameCategory[i][j][0], 1, true);
 									default:
 								}
 						}
-					} else if (j == 0) {
-						adjCarHasMoreCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(adjCarHasMoreCategory[i][j][0], 1, true);		
-						adjCarHasMoreCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(adjCarHasMoreCategory[i][j][0], 1, true);	
-						sameCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(sameCategory[i][j][0], 1, true);
 					}
-
-					//carLiterals[i][j] = satWrapper.cpVarToBoolVar(parkingLot[i][j], 1, true);
-					/*
-					switch (board[i][j].getCategory()) {
-						case 'A':
-							catALiterals[i][j] = satWrapper.cpVarToBoolVar(catA[i][j], 1, true);
-							catBLiterals[i][j] = satWrapper.cpVarToBoolVar(catB[i][j], 1, false);
-							catCLiterals[i][j] = satWrapper.cpVarToBoolVar(catC[i][j], 1, false);
-							break;
-						case 'B':
-							catBLiterals[i][j] = satWrapper.cpVarToBoolVar(catB[i][j], 1, true);
-							catALiterals[i][j] = satWrapper.cpVarToBoolVar(catB[i][j], 1, false);
-							catCLiterals[i][j] = satWrapper.cpVarToBoolVar(catC[i][j], 1, false);
-							break;
-						case 'C':
-							catCLiterals[i][j] = satWrapper.cpVarToBoolVar(catC[i][j], 1, true);
-							catALiterals[i][j] = satWrapper.cpVarToBoolVar(catB[i][j], 1, false);
-							catBLiterals[i][j] = satWrapper.cpVarToBoolVar(catC[i][j], 1, false);
-							break;
-						default:
-							break;
-					} */
-				} else {
-					//carLiterals[i][j] = satWrapper.cpVarToBoolVar(parkingLot[i][j], 1, false);
-					//catALiterals[i][j] = satWrapper.cpVarToBoolVar(catA[i][j], 1, false);
-					//catBLiterals[i][j] = satWrapper.cpVarToBoolVar(catB[i][j], 1, false);
-					//catCLiterals[i][j] = satWrapper.cpVarToBoolVar(catC[i][j], 1, false);
 				}
 			}
 		}
-
-
 
 		/* The problem will be defined in CNF form, thus, every clause
 		* of the problem will be added one by one.
@@ -303,21 +233,12 @@ public class SATParking {
 		//1.
 		  for(int i = 0; i<M; i++) {
 		  	for(int j = 0; j<N; j++) {
-				addClause(satWrapper, adjCarHasMoreCategoryLiterals[i][j][0], adjCarHasMoreCategoryLiterals[i][j][1], sameCategoryLiterals[i][j][0], sameCategoryLiterals[i][j][1]);
-				addClause(satWrapper, adjCarHasMoreCategoryLiterals[i][j][0], adjCarHasMoreCategoryLiterals[i][j][1], sameCategoryLiterals[i][j][0], -otherCarCameAfterMeLiterals[i][j][1]);
-				addClause(satWrapper, adjCarHasMoreCategoryLiterals[i][j][0], adjCarHasMoreCategoryLiterals[i][j][1], sameCategoryLiterals[i][j][1], -otherCarCameAfterMeLiterals[i][j][0]);
-				addClause(satWrapper, adjCarHasMoreCategoryLiterals[i][j][0], adjCarHasMoreCategoryLiterals[i][j][1], -otherCarCameAfterMeLiterals[i][j][0], -otherCarCameAfterMeLiterals[i][j][1]);
+				addClause(satWrapper, greaterCategoryLiterals[i][j][0], greaterCategoryLiterals[i][j][1], sameCategoryLiterals[i][j][0], sameCategoryLiterals[i][j][1]);
+				addClause(satWrapper, greaterCategoryLiterals[i][j][0], greaterCategoryLiterals[i][j][1], sameCategoryLiterals[i][j][0], afterLiterals[i][j][1]);
+				addClause(satWrapper, greaterCategoryLiterals[i][j][0], greaterCategoryLiterals[i][j][1], sameCategoryLiterals[i][j][1], afterLiterals[i][j][0]);
+				addClause(satWrapper, greaterCategoryLiterals[i][j][0], greaterCategoryLiterals[i][j][1], afterLiterals[i][j][0], afterLiterals[i][j][1]);
 			}
 		  }
-
-
-
-		//2.
-		//3.
-		//4.
-		//5.
-		//6.
-		//7.
 
 		// Solve the problem
 		Search<BooleanVar> search = new DepthFirstSearch<BooleanVar>();
