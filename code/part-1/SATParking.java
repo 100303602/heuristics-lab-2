@@ -61,13 +61,6 @@ public class SATParking {
 					board[i][j] = new Car(line.split(" ")[j].charAt(0), Character.getNumericValue(line.split(" ")[j].charAt(1)));
 				}
 			}
-
-//			for (int i=0; i<M; i++) {
-//				for (int j=0; j<N; j++) {
-//					System.out.print("(" + board[i][j].getCategory() + "," + board[i][j].getOrder() + ") ");
-//				}
-//				System.out.println();
-//			}
 		} catch(FileNotFoundException ex) {
 			System.out.println("File not found: '" + fileName + "'");
 		} catch(IOException ex) {
@@ -97,41 +90,12 @@ public class SATParking {
 		// Collect all the variables for the SimpleSelect
 		BooleanVar[] allVariables = new BooleanVar[(M*N*6)];
 		int aux = 0;
-		for(int j=0; j<M; j++) {
-			for(int k=0; k<N; k++) {
-				for(int l=0; l<2; l++) {
-					allVariables[aux] = after[j][k][l];
-					aux++;
-				}
-			}
-		}
-		for(int j=0; j<M; j++) {
-			for(int k=0; k<N; k++) {
-				for(int l=0; l<2; l++) {
-					allVariables[aux] = sameCategory[j][k][l];
-					aux++;
-				}
-			}
-		}
-		for(int j=0; j<M; j++) {
-			for(int k=0; k<N; k++) {
-				for(int l=0; l<2; l++) {
-					allVariables[aux] = greaterCategory[j][k][l];
-					aux++;
-				}
-			}
-		}
+		for(int j=0; j<M; j++) for(int k=0; k<N; k++) for(int l=0; l<2; l++, aux++) allVariables[aux] = after[j][k][l];
+		for(int j=0; j<M; j++) for(int k=0; k<N; k++) for(int l=0; l<2; l++, aux++) allVariables[aux] = sameCategory[j][k][l];
+		for(int j=0; j<M; j++) for(int k=0; k<N; k++) for(int l=0; l<2; l++, aux++) allVariables[aux] = greaterCategory[j][k][l];
 
 		// Register all the variables in the SatWrapper
-		for(int i=0; i<M; i++) {
-			for(int j=0; j<N; j++) {
-				for(int k=0; k<2; k++) {
-					satWrapper.register(after[i][j][k]);
-					satWrapper.register(sameCategory[i][j][k]);
-					satWrapper.register(greaterCategory[i][j][k]);
-				}
-			}
-		}
+		for(int i=0; i<M; i++) for(int j=0; j<N; j++) for(int k=0; k<2; k++) {satWrapper.register(after[i][j][k]); satWrapper.register(sameCategory[i][j][k]); satWrapper.register(greaterCategory[i][j][k]);}
 
 		// Obtain non-negated literals out of the binary variables
 		int[][][] greaterCategoryLiterals = new int [M][N][2];
@@ -144,50 +108,89 @@ public class SATParking {
 					if (j < N-1) {
 						if(board[i][j].getOrder() < board[i][j+1].getOrder()) {
 							afterLiterals[i][j][1] = satWrapper.cpVarToBoolVar(after[i][j][1], 1, true);
+				            addClause(satWrapper, -afterLiterals[i][j][1]);
 						} else {
-							afterLiterals[i][j][1] = satWrapper.cpVarToBoolVar(after[i][j][1], 0, true);
+							afterLiterals[i][j][1] = satWrapper.cpVarToBoolVar(after[i][j][1], 1, true);
+							//afterLiterals[i][j][1] = satWrapper.cpVarToBoolVar(after[i][j][1], 0, true);
+				            addClause(satWrapper, afterLiterals[i][j][1]);
 						}
 					}
 					if (j == N-1) {
-						afterLiterals[i][j][1] = satWrapper.cpVarToBoolVar(after[i][j][1], 0, true);
+						afterLiterals[i][j][1] = satWrapper.cpVarToBoolVar(after[i][j][1], 1, true);
+						//afterLiterals[i][j][1] = satWrapper.cpVarToBoolVar(after[i][j][1], 0, true);
+                        addClause(satWrapper, -afterLiterals[i][j][1]);
+
 						greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 1, true);		
+                        addClause(satWrapper, greaterCategoryLiterals[i][j][1]);
+
 						sameCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(sameCategory[i][j][1], 1, true);
+                        addClause(satWrapper, sameCategoryLiterals[i][j][1]);
 					}
 					if (j > 0) {
 						if(board[i][j].getOrder() < board[i][j-1].getOrder()) {
 							afterLiterals[i][j][0] = satWrapper.cpVarToBoolVar(after[i][j][0], 1, true);
+                            addClause(satWrapper, -afterLiterals[i][j][0]);
 						} else {
-							afterLiterals[i][j][0] = satWrapper.cpVarToBoolVar(after[i][j][0], 0, true);
+							afterLiterals[i][j][0] = satWrapper.cpVarToBoolVar(after[i][j][0], 1, true);
+							//afterLiterals[i][j][0] = satWrapper.cpVarToBoolVar(after[i][j][0], 0, true);
+                            addClause(satWrapper, afterLiterals[i][j][0]);
 						}
 					}
 					if (j == 0) {
-						afterLiterals[i][j][0] = satWrapper.cpVarToBoolVar(after[i][j][0], 0, true);
+						afterLiterals[i][j][0] = satWrapper.cpVarToBoolVar(after[i][j][0], 1, true);
+						//afterLiterals[i][j][0] = satWrapper.cpVarToBoolVar(after[i][j][0], 0, true);
+                        addClause(satWrapper, afterLiterals[i][j][0]);
+
 						greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 1, true);	
+                        addClause(satWrapper, greaterCategoryLiterals[i][j][1]);
+
 						sameCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(sameCategory[i][j][0], 1, true);
+                        addClause(satWrapper, sameCategoryLiterals[i][j][1]);
 					}
 					if (j < N-1) {
 						switch(board[i][j].getCategory()) {
 							case 'A':
 								switch(board[i][j+1].getCategory()) {
-									case 'A': sameCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(sameCategory[i][j][1], 1, true);
-									case 'B': greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 1, true);	
-									case 'C': greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 1, true);
+									case 'A':
+                                        sameCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(sameCategory[i][j][1], 1, true);
+                                        addClause(satWrapper, sameCategoryLiterals[i][j][1]);
+									case 'B':
+                                        greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 1, true);	
+                                        addClause(satWrapper, greaterCategoryLiterals[i][j][1]);
+									case 'C':
+                                        greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 1, true);
+                                        addClause(satWrapper, greaterCategoryLiterals[i][j][1]);
 									default:
 								}
 						
 							case 'B':
 								switch(board[i][j+1].getCategory()) {	
-									case 'A': greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 0, true);	
-									case 'B': sameCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(sameCategory[i][j][1], 1, true);
-									case 'C': greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 1, true);
+									case 'A':
+                                        greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 1, true);	
+                                        addClause(satWrapper, -greaterCategoryLiterals[i][j][1]);
+                                        //case 'A': greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 0, true);	
+									case 'B':
+                                        sameCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(sameCategory[i][j][1], 1, true);
+                                        addClause(satWrapper, sameCategoryLiterals[i][j][1]);
+									case 'C':
+                                        greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 1, true);
+                                        addClause(satWrapper, greaterCategoryLiterals[i][j][1]);
 									default:
 								}
 
 							case 'C':
 								switch(board[i][j+1].getCategory()) {
-									case 'A': greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 0, true);		
-									case 'B': greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 0, true);	
-									case 'C': sameCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(sameCategory[i][j][1], 1, true);
+									case 'A':
+                                        greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 1, true);		
+                                        addClause(satWrapper, -greaterCategoryLiterals[i][j][1]);
+                                        //case 'A': greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 0, true);		
+									case 'B':
+                                        greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 1, true);	
+                                        addClause(satWrapper, -greaterCategoryLiterals[i][j][1]);
+                                        //case 'B': greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 0, true);	
+									case 'C':
+                                        sameCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(sameCategory[i][j][1], 1, true);
+                                        addClause(satWrapper, sameCategoryLiterals[i][j][1]);
 									default:
 								}
 						}
@@ -196,25 +199,46 @@ public class SATParking {
 						switch(board[i][j].getCategory()) {
 							case 'A':
 								switch(board[i][j-1].getCategory()) {
-									case 'A': sameCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(sameCategory[i][j][0], 1, true);
-									case 'B': greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 1, true);	
-									case 'C': greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 1, true);
+									case 'A':
+                                        sameCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(sameCategory[i][j][0], 1, true);
+                                        addClause(satWrapper, sameCategoryLiterals[i][j][0]);
+									case 'B':
+                                        greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 1, true);	
+                                        addClause(satWrapper, greaterCategoryLiterals[i][j][0]);
+									case 'C':
+                                        greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 1, true);
+                                        addClause(satWrapper, greaterCategoryLiterals[i][j][0]);
 									default:
 								}
 						
 							case 'B':
 								switch(board[i][j-1].getCategory()) {	
-									case 'A': greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 0, true);	
-									case 'B': sameCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(sameCategory[i][j][0], 1, true);
-									case 'C': greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 1, true);
+									case 'A':
+                                        greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 1, true);	
+                                        addClause(satWrapper, -greaterCategoryLiterals[i][j][0]);
+                                        //case 'A': greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 0, true);	
+									case 'B':
+                                        sameCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(sameCategory[i][j][0], 1, true);
+                                        addClause(satWrapper, sameCategoryLiterals[i][j][0]);
+									case 'C':
+                                        greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 1, true);
+                                        addClause(satWrapper, greaterCategoryLiterals[i][j][0]);
 									default:
 								}
 
 							case 'C':
 								switch(board[i][j-1].getCategory()) {
-									case 'A': greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 0, true);		
-									case 'B': greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 0, true);	
-									case 'C': sameCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(sameCategory[i][j][0], 1, true);
+									case 'A':
+                                        greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 1, true);		
+                                        addClause(satWrapper, -greaterCategoryLiterals[i][j][0]);
+                                        //case 'A': greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 0, true);		
+									case 'B':
+                                        greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 1, true);	
+                                        addClause(satWrapper, -greaterCategoryLiterals[i][j][0]);
+                                        //case 'B': greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 0, true);	
+									case 'C':
+                                        sameCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(sameCategory[i][j][0], 1, true);
+                                        addClause(satWrapper, sameCategoryLiterals[i][j][0]);
 									default:
 								}
 						}
@@ -232,41 +256,53 @@ public class SATParking {
 
 		// Add all clauses
 
+//        for(int i = 0; i<M; i++) {
+//		  	for(int j = 0; j<N; j++) {
+//				addClause(satWrapper, sameCategoryLiterals[i][j][0]);
+//				addClause(satWrapper, sameCategoryLiterals[i][j][1]);
+//				addClause(satWrapper, -afterLiterals[i][j][0]);
+//				addClause(satWrapper, -afterLiterals[i][j][1]);
+//
+//				addClause(satWrapper, greaterCategoryLiterals[i][j][0]);
+//				addClause(satWrapper, greaterCategoryLiterals[i][j][1]);
+//             }
+//        }
 		//1.
-		  for(int i = 0; i<M; i++) {
-		  	for(int j = 0; j<N; j++) {
-				addClause(satWrapper, greaterCategoryLiterals[i][j][0], greaterCategoryLiterals[i][j][1], sameCategoryLiterals[i][j][0], sameCategoryLiterals[i][j][1]);
-				addClause(satWrapper, greaterCategoryLiterals[i][j][0], greaterCategoryLiterals[i][j][1], sameCategoryLiterals[i][j][0], afterLiterals[i][j][1]);
-				addClause(satWrapper, greaterCategoryLiterals[i][j][0], greaterCategoryLiterals[i][j][1], sameCategoryLiterals[i][j][1], afterLiterals[i][j][0]);
-				addClause(satWrapper, greaterCategoryLiterals[i][j][0], greaterCategoryLiterals[i][j][1], afterLiterals[i][j][0], afterLiterals[i][j][1]);
-			}
-		  }
+		  
+//        for(int i = 0; i<M; i++) {
+//		  	for(int j = 0; j<N; j++) {
+//				addClause(satWrapper, greaterCategoryLiterals[i][j][0], greaterCategoryLiterals[i][j][1], sameCategoryLiterals[i][j][0], sameCategoryLiterals[i][j][1]);
+//				addClause(satWrapper, greaterCategoryLiterals[i][j][0], greaterCategoryLiterals[i][j][1], sameCategoryLiterals[i][j][0], -afterLiterals[i][j][1]);
+//				addClause(satWrapper, greaterCategoryLiterals[i][j][0], greaterCategoryLiterals[i][j][1], sameCategoryLiterals[i][j][1], -afterLiterals[i][j][0]);
+//				addClause(satWrapper, greaterCategoryLiterals[i][j][0], greaterCategoryLiterals[i][j][1], -afterLiterals[i][j][0], -afterLiterals[i][j][1]);
+//			}
+//		  }
 
 		// Solve the problem
-//		Search<BooleanVar> search = new DepthFirstSearch<BooleanVar>();
-//		SelectChoicePoint<BooleanVar> select = new SimpleSelect<BooleanVar>(allVariables, new SmallestDomain<BooleanVar>(), new IndomainMin<BooleanVar>());
-//		Boolean result = search.labeling(store, select);
+		Search<BooleanVar> search = new DepthFirstSearch<BooleanVar>();
+		SelectChoicePoint<BooleanVar> select = new SimpleSelect<BooleanVar>(allVariables, new SmallestDomain<BooleanVar>(), new IndomainMin<BooleanVar>());
+		Boolean result = search.labeling(store, select);
 
-		boolean result = store.consistency();
-		System.out.println("Is the formula consistent?" +  result);
+//		boolean result = store.consistency();
+		//System.out.println("Is the formula satisfiable?" +  result);
 
-//		Character[][] results = new Character[M][N];
-//		for (int i = 0; i < M; i++) {
-//			for (int j = 0; j < N; j++) {
-//				if(parkingLot[i][j].dom().value() == 1) {
-//					results[i][j] = '>';
-//				}
-//			}
-//		}
+		//Character[][] results = new Character[M][N];
+		//for (int i = 0; i < M; i++) {
+			//for (int j = 0; j < N; j++) {
+		//		if(parkingLot[i][j].dom().value() == 1) {
+		//			results[i][j] = '>';
+		//		}
+			//}
+		//}
 
 		if(result) {
-			//System.out.println("Solution: ");
-			//for (int i = 0; i < M; i++) {
-			//	for (int j = 0; j < N; j++) {
-			//		System.out.println(results[i][j]);
-			//	}
-			//	System.out.println();
-			//}
+			System.out.println("Solution: ");
+			for (int i = 0; i < M; i++) {
+				for (int j = 0; j < N; j++) {
+		//			System.out.println(results[i][j]);
+				}
+		//		System.out.println();
+			}
 		} else {
 			System.out.println("*** No");
 		}
