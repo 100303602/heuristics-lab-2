@@ -154,12 +154,12 @@ public class SATParking {
 		}
 
 		// Add all clauses
-		for (int i=0; i<M; i++) for (int j=1; j<N-1; j++) for (int k=left; k<=right; k++) {
+/*		for (int i=0; i<M; i++) for (int j=1; j<N-1; j++) for (int k=left; k<=right; k++) {
 			addClause(satWrapper, lowerWaitingTimeLiterals[i][j][0], lowerWaitingTimeLiterals[i][j][1], sameCategoryLiterals[i][j][0], sameCategoryLiterals[i][j][1]);
 			addClause(satWrapper, lowerWaitingTimeLiterals[i][j][0], lowerWaitingTimeLiterals[i][j][1], sameCategoryLiterals[i][j][0], beforeLiterals[i][j][1]);
 			addClause(satWrapper, lowerWaitingTimeLiterals[i][j][0], lowerWaitingTimeLiterals[i][j][1], sameCategoryLiterals[i][j][1], beforeLiterals[i][j][0]);
 			addClause(satWrapper, lowerWaitingTimeLiterals[i][j][0], lowerWaitingTimeLiterals[i][j][1], beforeLiterals[i][j][0], beforeLiterals[i][j][1]);
-		}
+		}*/
 
 		// Solve the problem
 		Search<BooleanVar> search            = new DepthFirstSearch<BooleanVar>();
