@@ -1,6 +1,12 @@
 import java.io.*;
-import java.lang.reflect.Array;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Arrays;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileNotFoundException;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 
 import org.jacop.core.BooleanVar;
 import org.jacop.core.Store;
@@ -13,59 +19,56 @@ import org.jacop.search.SelectChoicePoint;
 import org.jacop.search.SimpleSelect;
 import org.jacop.search.SmallestDomain;
 
+
 public class SATParking {
 	public static class Car {
 		private char category;
-		private int order;
+		private int arrivalTime;
+		public static HashMap<Character,Float> waitingTimes;
 
-		public Car(char category, int order){
-			this.category = category;
-			this.order = order;
+		public Car (char category, int arrivalTime) {
+			this.category    = category;
+			this.arrivalTime = arrivalTime;
+			this.waitingTimes = new HashMap<Character, Float>();
+			this.waitingTimes.put('A', 0.5f);
+			this.waitingTimes.put('B', 2f);
+			this.waitingTimes.put('C', 3f);
+			this.waitingTimes.put('_', -1f);
 		}
 
-		public void setCategory(char category){
-			this.category = category;
-		}
+		public char getCategory () { return this.category; }
 
-		public void setOrder(int order){
-			this.order = order;
-		}
+		public float getWaitingTime () { return this.waitingTimes.get(this.category); }
 
-		public char getCategory(){
-			return this.category;
-		}
-
-		public int getOrder(){
-			return this.order;
-		}
+		public int getArrivalTime () { return this.arrivalTime; }
 	}
 
-	public static void main(String args[]){
-		String fileName = args[0];
+	public static void main(String args[]) {
+		String inputFileName = args[0];
 		int M = 0;
 		int N = 0;
 		Car [][] board = null;
 
+		final int left  = 0;
+		final int right = 1;
+
 		try {
-			FileReader fileReader = new FileReader(fileName);
+			FileReader fileReader = new FileReader(inputFileName);
 			BufferedReader bufferedReader = new BufferedReader(fileReader);
 			String header = bufferedReader.readLine();
 			M = Integer.parseInt(header.split(" ")[0]);
 			N = Integer.parseInt(header.split(" ")[1]);
+			System.out.println("M:" + M + ", N:" + N + "\n");
 			board = new Car[M][N];
-			
-			System.out.println(M + " " + N);
-			for(int i=0; i<M; i++) {
-				String line = bufferedReader.readLine();
-				for(int j=0; j<N; j++) {
-					board[i][j] = new Car(line.split(" ")[j].charAt(0), Character.getNumericValue(line.split(" ")[j].charAt(1)));
-				}
+
+			for (int i=0; i<M; i++) {
+				String[] line = bufferedReader.readLine().split(" ");
+				for (int j=0; j<line.length; j++)
+					board[i][j] = new Car(line[j].charAt(0), Character.getNumericValue(line[j].charAt(1)));
 			}
-		} catch(FileNotFoundException ex) {
-			System.out.println("File not found: '" + fileName + "'");
-		} catch(IOException ex) {
-			System.out.println("Error reading file: '" + fileName + "'");
 		}
+		catch (FileNotFoundException ex) { System.out.println("File not found: '"     + inputFileName + "'"); }
+		catch (IOException ex)           { System.out.println("Error reading file: '" + inputFileName + "'"); }
 
 		// Create the store and the satWrapper to encode the problem
 		Store store = new Store();
@@ -73,258 +76,128 @@ public class SATParking {
 		store.impose(satWrapper);
 
 		// Create the binary variables that represent the presence of cars in map
-		BooleanVar[][][] after = new BooleanVar[M][N][2];
-		BooleanVar[][][] sameCategory = new BooleanVar[M][N][2];
-		BooleanVar[][][] greaterCategory = new BooleanVar[M][N][2];
+		// adjacent car entered before current car
+		BooleanVar[][][] before        = new BooleanVar[M][N][2];
+		// adjacent car has the same category as the current car
+		BooleanVar[][][] sameCategory  = new BooleanVar[M][N][2];
+		// adjcent car's category has lower waiting time than the current car's category
+		BooleanVar[][][] lowerWaitingTime = new BooleanVar[M][N][2];
 
-		for(int i=0; i<M; i++) {
-			for(int j=0; j<N; j++) {
-				for (int k=0; k<2; k++) {
-					after[i][j][k] = new BooleanVar(store, "after(" + i + "," + j + "," + (k==0 ? "left" : "right") + ")");
-					sameCategory[i][j][k] = new BooleanVar(store, "sameCategory(" + i + "," + j + "," + (k==0 ? "left" : "right") + ")");
-					greaterCategory[i][j][k] = new BooleanVar(store, "greaterCategory(" + i + "," + j + "," + (k==0 ? "left" : "right") + ")");
-				}
-			}
+		for (int i=0; i<M; i++) for (int j=1; j<N-1; j++) for (int k=left; k<=right; k++) {
+			String variableDescription = "car" + (k==left ? "Left" : "Right") + "To(" + i + "," + j +")";
+			before[i][j][k]            = new BooleanVar(store, variableDescription + "EnteredTheLaneBefore");
+			sameCategory[i][j][k]      = new BooleanVar(store, variableDescription + "HasTheSameCategory");
+			lowerWaitingTime[i][j][k]  = new BooleanVar(store, variableDescription + "HasLowerWaitingTime");
 		}
 
 		// Collect all the variables for the SimpleSelect
-		BooleanVar[] allVariables = new BooleanVar[(M*N*6)];
-		int aux = 0;
-		for(int j=0; j<M; j++) for(int k=0; k<N; k++) for(int l=0; l<2; l++, aux++) allVariables[aux] = after[j][k][l];
-		for(int j=0; j<M; j++) for(int k=0; k<N; k++) for(int l=0; l<2; l++, aux++) allVariables[aux] = sameCategory[j][k][l];
-		for(int j=0; j<M; j++) for(int k=0; k<N; k++) for(int l=0; l<2; l++, aux++) allVariables[aux] = greaterCategory[j][k][l];
+		BooleanVar[] allVariables = new BooleanVar[(M*(N-2)*6)];
+		int m = 0;
+		for (int k=left; k<=right; k++) for (int i=0; i<M; i++) for (int j=1; j<N-1; j++, m++) allVariables[m] = before[i][j][k];
+		for (int k=left; k<=right; k++) for (int i=0; i<M; i++) for (int j=1; j<N-1; j++, m++) allVariables[m] = sameCategory[i][j][k];
+		for (int k=left; k<=right; k++) for (int i=0; i<M; i++) for (int j=1; j<N-1; j++, m++) allVariables[m] = lowerWaitingTime[i][j][k];
 
 		// Register all the variables in the SatWrapper
-		for(int i=0; i<M; i++) for(int j=0; j<N; j++) for(int k=0; k<2; k++) {satWrapper.register(after[i][j][k]); satWrapper.register(sameCategory[i][j][k]); satWrapper.register(greaterCategory[i][j][k]);}
+		for (int i=0; i<M; i++) for (int j=1; j<N-1; j++) for (int k=left; k<=right; k++) {
+			satWrapper.register(before[i][j][k]);
+			satWrapper.register(sameCategory[i][j][k]);
+			satWrapper.register(lowerWaitingTime[i][j][k]);
+		}
 
 		// Obtain non-negated literals out of the binary variables
-		int[][][] greaterCategoryLiterals = new int [M][N][2];
-		int[][][] sameCategoryLiterals = new int[M][N][2];
-		int[][][] afterLiterals = new int[M][N][2];
+		int[][][] lowerWaitingTimeLiterals = new int[M][N][2];
+		int[][][] sameCategoryLiterals     = new int[M][N][2];
+		int[][][] beforeLiterals           = new int[M][N][2];
 
-		for (int i=0; i<M; i++) {
-			for (int j=0; j<N; j++) {
-				if (board[i][j] != null) {
-					if (j < N-1) {
-						if(board[i][j].getOrder() < board[i][j+1].getOrder()) {
-							afterLiterals[i][j][1] = satWrapper.cpVarToBoolVar(after[i][j][1], 1, true);
-				            addClause(satWrapper, -afterLiterals[i][j][1]);
-						} else {
-							afterLiterals[i][j][1] = satWrapper.cpVarToBoolVar(after[i][j][1], 1, true);
-							//afterLiterals[i][j][1] = satWrapper.cpVarToBoolVar(after[i][j][1], 0, true);
-				            addClause(satWrapper, afterLiterals[i][j][1]);
-						}
-					}
-					if (j == N-1) {
-						afterLiterals[i][j][1] = satWrapper.cpVarToBoolVar(after[i][j][1], 1, true);
-						//afterLiterals[i][j][1] = satWrapper.cpVarToBoolVar(after[i][j][1], 0, true);
-                        addClause(satWrapper, -afterLiterals[i][j][1]);
-
-						greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 1, true);		
-                        addClause(satWrapper, greaterCategoryLiterals[i][j][1]);
-
-						sameCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(sameCategory[i][j][1], 1, true);
-                        addClause(satWrapper, sameCategoryLiterals[i][j][1]);
-					}
-					if (j > 0) {
-						if(board[i][j].getOrder() < board[i][j-1].getOrder()) {
-							afterLiterals[i][j][0] = satWrapper.cpVarToBoolVar(after[i][j][0], 1, true);
-                            addClause(satWrapper, -afterLiterals[i][j][0]);
-						} else {
-							afterLiterals[i][j][0] = satWrapper.cpVarToBoolVar(after[i][j][0], 1, true);
-							//afterLiterals[i][j][0] = satWrapper.cpVarToBoolVar(after[i][j][0], 0, true);
-                            addClause(satWrapper, afterLiterals[i][j][0]);
-						}
-					}
-					if (j == 0) {
-						afterLiterals[i][j][0] = satWrapper.cpVarToBoolVar(after[i][j][0], 1, true);
-						//afterLiterals[i][j][0] = satWrapper.cpVarToBoolVar(after[i][j][0], 0, true);
-                        addClause(satWrapper, afterLiterals[i][j][0]);
-
-						greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 1, true);	
-                        addClause(satWrapper, greaterCategoryLiterals[i][j][1]);
-
-						sameCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(sameCategory[i][j][0], 1, true);
-                        addClause(satWrapper, sameCategoryLiterals[i][j][1]);
-					}
-					if (j < N-1) {
-						switch(board[i][j].getCategory()) {
-							case 'A':
-								switch(board[i][j+1].getCategory()) {
-									case 'A':
-                                        sameCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(sameCategory[i][j][1], 1, true);
-                                        addClause(satWrapper, sameCategoryLiterals[i][j][1]);
-									case 'B':
-                                        greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 1, true);	
-                                        addClause(satWrapper, greaterCategoryLiterals[i][j][1]);
-									case 'C':
-                                        greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 1, true);
-                                        addClause(satWrapper, greaterCategoryLiterals[i][j][1]);
-									default:
-								}
-						
-							case 'B':
-								switch(board[i][j+1].getCategory()) {	
-									case 'A':
-                                        greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 1, true);	
-                                        addClause(satWrapper, -greaterCategoryLiterals[i][j][1]);
-                                        //case 'A': greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 0, true);	
-									case 'B':
-                                        sameCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(sameCategory[i][j][1], 1, true);
-                                        addClause(satWrapper, sameCategoryLiterals[i][j][1]);
-									case 'C':
-                                        greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 1, true);
-                                        addClause(satWrapper, greaterCategoryLiterals[i][j][1]);
-									default:
-								}
-
-							case 'C':
-								switch(board[i][j+1].getCategory()) {
-									case 'A':
-                                        greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 1, true);		
-                                        addClause(satWrapper, -greaterCategoryLiterals[i][j][1]);
-                                        //case 'A': greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 0, true);		
-									case 'B':
-                                        greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 1, true);	
-                                        addClause(satWrapper, -greaterCategoryLiterals[i][j][1]);
-                                        //case 'B': greaterCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][1], 0, true);	
-									case 'C':
-                                        sameCategoryLiterals[i][j][1] = satWrapper.cpVarToBoolVar(sameCategory[i][j][1], 1, true);
-                                        addClause(satWrapper, sameCategoryLiterals[i][j][1]);
-									default:
-								}
-						}
-					}
-					if (j > 0) {
-						switch(board[i][j].getCategory()) {
-							case 'A':
-								switch(board[i][j-1].getCategory()) {
-									case 'A':
-                                        sameCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(sameCategory[i][j][0], 1, true);
-                                        addClause(satWrapper, sameCategoryLiterals[i][j][0]);
-									case 'B':
-                                        greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 1, true);	
-                                        addClause(satWrapper, greaterCategoryLiterals[i][j][0]);
-									case 'C':
-                                        greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 1, true);
-                                        addClause(satWrapper, greaterCategoryLiterals[i][j][0]);
-									default:
-								}
-						
-							case 'B':
-								switch(board[i][j-1].getCategory()) {	
-									case 'A':
-                                        greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 1, true);	
-                                        addClause(satWrapper, -greaterCategoryLiterals[i][j][0]);
-                                        //case 'A': greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 0, true);	
-									case 'B':
-                                        sameCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(sameCategory[i][j][0], 1, true);
-                                        addClause(satWrapper, sameCategoryLiterals[i][j][0]);
-									case 'C':
-                                        greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 1, true);
-                                        addClause(satWrapper, greaterCategoryLiterals[i][j][0]);
-									default:
-								}
-
-							case 'C':
-								switch(board[i][j-1].getCategory()) {
-									case 'A':
-                                        greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 1, true);		
-                                        addClause(satWrapper, -greaterCategoryLiterals[i][j][0]);
-                                        //case 'A': greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 0, true);		
-									case 'B':
-                                        greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 1, true);	
-                                        addClause(satWrapper, -greaterCategoryLiterals[i][j][0]);
-                                        //case 'B': greaterCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(greaterCategory[i][j][0], 0, true);	
-									case 'C':
-                                        sameCategoryLiterals[i][j][0] = satWrapper.cpVarToBoolVar(sameCategory[i][j][0], 1, true);
-                                        addClause(satWrapper, sameCategoryLiterals[i][j][0]);
-									default:
-								}
-						}
-					}
-				}
-			}
+		for (int i=0; i<M; i++) for (int j=1; j<N-1; j++) if(board[i][j] != null) for (int k=left; k<=right; k++) {
+			beforeLiterals[i][j][k]           = satWrapper.cpVarToBoolVar(before[i][j][k], 1, true);
+			sameCategoryLiterals[i][j][k]     = satWrapper.cpVarToBoolVar(sameCategory[i][j][k], 1, true);
+			lowerWaitingTimeLiterals[i][j][k] = satWrapper.cpVarToBoolVar(lowerWaitingTime[i][j][k], 1, true);
 		}
 
-		/* The problem will be defined in CNF form, thus, every clause
-		* of the problem will be added one by one.
-		* Each clause will consist in the disjunction of a set of the
-		* previously defined literals.
-		* We express a negated literal as follows: -xLiteral
-		* */
+		int currentCategory, currentArrivalTime, adjacentCategory, adjacentArrivalTime;
+		float currentWaitingTime, adjacentWaitingTime;
+		int side = 0;
+		for (int i=0; i<M; i++) for (int j=1; j<N-1; j++) for (int k=left; k<=right; k++) {
+			if (k == left)
+				side = -1;
+			else
+				side = 1;
+			currentCategory     = board[i][j].getCategory();
+			currentWaitingTime  = board[i][j].getWaitingTime();
+			currentArrivalTime  = board[i][j].getArrivalTime();
+			adjacentCategory    = board[i][j+side].getCategory();
+			adjacentWaitingTime = board[i][j+side].getWaitingTime();
+			adjacentArrivalTime = board[i][j+side].getArrivalTime();
+			if (adjacentCategory != '_') {
+				if (adjacentCategory == currentCategory) {
+					addClause(satWrapper, sameCategoryLiterals[i][j][k]);
+					addClause(satWrapper, -lowerWaitingTimeLiterals[i][j][k]);
+				}
+				else {
+					addClause(satWrapper, -sameCategoryLiterals[i][j][k]);
+					if (adjacentWaitingTime < currentWaitingTime)
+						addClause(satWrapper, lowerWaitingTimeLiterals[i][j][k]);
+					else
+						addClause(satWrapper, -lowerWaitingTimeLiterals[i][j][k]);
+				}
+				if (adjacentArrivalTime < currentArrivalTime)
+					addClause(satWrapper, beforeLiterals[i][j][k]);
+				else
+					addClause(satWrapper, -beforeLiterals[i][j][k]);
+			}
+			else {
+				addClause(satWrapper, lowerWaitingTimeLiterals[i][j][k]);
+				addClause(satWrapper, sameCategoryLiterals[i][j][k]);
+				addClause(satWrapper, beforeLiterals[i][j][k]);
+			}
+		}
 
 		// Add all clauses
-
-//        for(int i = 0; i<M; i++) {
-//		  	for(int j = 0; j<N; j++) {
-//				addClause(satWrapper, sameCategoryLiterals[i][j][0]);
-//				addClause(satWrapper, sameCategoryLiterals[i][j][1]);
-//				addClause(satWrapper, -afterLiterals[i][j][0]);
-//				addClause(satWrapper, -afterLiterals[i][j][1]);
-//
-//				addClause(satWrapper, greaterCategoryLiterals[i][j][0]);
-//				addClause(satWrapper, greaterCategoryLiterals[i][j][1]);
-//             }
-//        }
-		//1.
-		  
-//        for(int i = 0; i<M; i++) {
-//		  	for(int j = 0; j<N; j++) {
-//				addClause(satWrapper, greaterCategoryLiterals[i][j][0], greaterCategoryLiterals[i][j][1], sameCategoryLiterals[i][j][0], sameCategoryLiterals[i][j][1]);
-//				addClause(satWrapper, greaterCategoryLiterals[i][j][0], greaterCategoryLiterals[i][j][1], sameCategoryLiterals[i][j][0], -afterLiterals[i][j][1]);
-//				addClause(satWrapper, greaterCategoryLiterals[i][j][0], greaterCategoryLiterals[i][j][1], sameCategoryLiterals[i][j][1], -afterLiterals[i][j][0]);
-//				addClause(satWrapper, greaterCategoryLiterals[i][j][0], greaterCategoryLiterals[i][j][1], -afterLiterals[i][j][0], -afterLiterals[i][j][1]);
-//			}
-//		  }
+		for (int i=0; i<M; i++) for (int j=1; j<N-1; j++) for (int k=left; k<=right; k++) {
+			addClause(satWrapper, lowerWaitingTimeLiterals[i][j][0], lowerWaitingTimeLiterals[i][j][1], sameCategoryLiterals[i][j][0], sameCategoryLiterals[i][j][1]);
+			addClause(satWrapper, lowerWaitingTimeLiterals[i][j][0], lowerWaitingTimeLiterals[i][j][1], sameCategoryLiterals[i][j][0], beforeLiterals[i][j][1]);
+			addClause(satWrapper, lowerWaitingTimeLiterals[i][j][0], lowerWaitingTimeLiterals[i][j][1], sameCategoryLiterals[i][j][1], beforeLiterals[i][j][0]);
+			addClause(satWrapper, lowerWaitingTimeLiterals[i][j][0], lowerWaitingTimeLiterals[i][j][1], beforeLiterals[i][j][0], beforeLiterals[i][j][1]);
+		}
 
 		// Solve the problem
-		Search<BooleanVar> search = new DepthFirstSearch<BooleanVar>();
+		Search<BooleanVar> search            = new DepthFirstSearch<BooleanVar>();
 		SelectChoicePoint<BooleanVar> select = new SimpleSelect<BooleanVar>(allVariables, new SmallestDomain<BooleanVar>(), new IndomainMin<BooleanVar>());
-		Boolean result = search.labeling(store, select);
+		Boolean result                       = search.labeling(store, select);
 
-//		boolean result = store.consistency();
-		//System.out.println("Is the formula satisfiable?" +  result);
+		System.out.println(result ? "No cars are blocked." : "One or more cars are bloqued.");
 
-		//Character[][] results = new Character[M][N];
-		//for (int i = 0; i < M; i++) {
-			//for (int j = 0; j < N; j++) {
-		//		if(parkingLot[i][j].dom().value() == 1) {
-		//			results[i][j] = '>';
-		//		}
-			//}
-		//}
-
-		if(result) {
-			System.out.println("Solution: ");
-			for (int i = 0; i < M; i++) {
-				for (int j = 0; j < N; j++) {
-		//			System.out.println(results[i][j]);
+		if (result) {
+			BufferedWriter out = null;
+			try {
+				FileWriter fstream = new FileWriter(args[0].substring(0, args[0].length() - ".input".length()) + "_parte1.output");
+				out = new BufferedWriter(fstream);
+				for (int i=0; i<M; i++) {
+					for (int j=0; j<N; j++) {
+						if (board[i][j].getCategory() != '_') {
+							if (j == 0)
+								out.write('<');
+							else if (j == N-1)
+								out.write('>');
+							else {
+								if ((lowerWaitingTime[i][j][left].dom().value() == 1) || (sameCategory[i][j][left].dom().value() == 1 && before[i][j][left].value() == 1))
+									out.write('<');
+								else if ((lowerWaitingTime[i][j][right].dom().value() == 1) || (sameCategory[i][j][right].dom().value() == 1 && before[i][j][right].value() == 1))
+									out.write('>');
+							}
+						}
+						else out.write('_');
+					}
+					out.write('\n');
 				}
-		//		System.out.println();
+				out.close();
+				System.out.println("A .output file with escape directions for cars has been generated.");
 			}
-		} else {
-			System.out.println("*** No");
+			catch (IOException e) {System.err.println("Error: " + e.getMessage());}
 		}
+		else System.out.println("No .output file has been generated as there was one or more cars blocked.");
 		System.out.println();
-
-//		System.out.println("---------------------");
-//		System.out.println("Extra information");
-//		long endTime = System.currentTimeMillis();
-		//long totalTime = endTime - startTime;
-//		System.out.println("Map: " + args[0]);
-//		System.out.println("#Ghosts: " + args[1]);
-		//System.out.println("Execution time: " + (totalTime/1000.0));
-	}
-
-
-
-	// Adds a clause of 1 literal
-	public static void addClause(SatWrapper satWrapper, int literal1, int literal2){
-		IntVec clause = new IntVec(satWrapper.pool);
-		clause.add(literal1);
-		clause.add(literal2);
-		satWrapper.addModelClause(clause.toArray());
 	}
 
 	// Adds a clause of 2 literals
@@ -334,17 +207,8 @@ public class SATParking {
 		satWrapper.addModelClause(clause.toArray());
 	}
 
-	// Adds a clause of 3 literals
-	public static void addClause(SatWrapper satWrapper, int literal1, int literal2, int literal3){
-		IntVec clause = new IntVec(satWrapper.pool);
-		clause.add(literal1);
-		clause.add(literal2);
-		clause.add(literal3);
-		satWrapper.addModelClause(clause.toArray());
-	}
-	
 	// Adds a clause of 4 literals
-	public static void addClause(SatWrapper satWrapper, int literal1, int literal2, int literal3, int literal4){
+	public static void addClause (SatWrapper satWrapper, int literal1, int literal2, int literal3, int literal4) {
 		IntVec clause = new IntVec(satWrapper.pool);
 		clause.add(literal1);
 		clause.add(literal2);
