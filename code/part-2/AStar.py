@@ -1,12 +1,10 @@
 import sys
-import string
 
 class Car:
-
 	def __init__(self, point, cat, order):
 		self.point = point
-        	self.cat = cat
-        	self.order = order
+		self.cat = cat
+		self.order = order
 
 class Node:
 	def __init__(self, point, cat, order):
@@ -37,19 +35,40 @@ def manhattan(pos1, pos2):
 
 def children(car, grid):
 	x,y = car.point
-	links = [grid[d[0]][d[1]] for d in [(x-1, y),(x,y - 1),(x,y + 1),(x+1,y)]]
-	return [link for link in links if link.value != '__']
+	print "Children:", x ,y
+	if x == 0 and y == 0:
+		links = [grid[d[0]][d[1]] for d in [(x,y + 1),(x+1,y)]]
+	elif x == 0 and y == (N-1):
+		links = [grid[d[0]][d[1]] for d in [(x+1,y),(x,y - 1)]]
+	elif x == 0 and y != 0 and y != (N-1):
+		links = [grid[d[0]][d[1]] for d in [(x,y + 1),(x+1,y),(x,y -1)]]
+	elif x == (M-1) and y == 0:
+		links = [grid[d[0]][d[1]] for d in [(x-1,y),(x,y+1)]]
+	elif x == (M-1) and y == (N-1):
+		links = [grid[d[0]][d[1]] for d in [(x-1,y),(x,y-1)]]
+	elif x == (M-1) and y != 0 and y != (N-1):
+		links = [grid[d[0]][d[1]] for d in [(x-1,y),(x,y+1),(x,y-1)]]
+	elif x != (M-1) and x != 0 and y == (N-1):
+		links = [grid[d[0]][d[1]] for d in [(x-1,y),(x+1,y),(x,y-1)]]
+	elif y == 0  and x != 0 and x != (M-1):
+		links = [grid[d[0]][d[1]] for d in [(x-1,y),(x+1,y),(x,y+1)]]
+	else:
+		links = [grid[d[0]][d[1]] for d in [(x-1, y),(x,y - 1),(x,y + 1),(x+1,y)]]
+
+	print "Links:", links
+	return [link for link in links if link.cat == '_']
+	#return [link for link in links]
 
 def aStar(start, goal, grid):
-	closedSet = set();
-	openSet = set();
+	closedSet = set()
+	openSet = set()
 	
 	current = start
 
 	openSet.add(current)
 
-	while openset:
-		current = min(openset, key=lambda o:o.G + o.H)
+	while openSet:
+		current = min(openSet, key=lambda o:o.G + o.H)
 
 		if current == goal:
 			path = []
@@ -58,13 +77,15 @@ def aStar(start, goal, grid):
 				current = current.parent
 			path.append(current)
 			return path[::-1]
+
 		openSet.remove(current)
-		closedSet.remove(current)
+
+		closedSet.add(current)
 
 		for node in children(current, grid):
-
 			if node in closedSet:
 				continue
+
 			if node in openSet:
 				new_g = current.G + current.move_cost(node)
 				if node.G > new_g:
@@ -85,9 +106,12 @@ def next_move(initial, final, grid):
 	for x in xrange(len(grid)):
 		for y in xrange(len(grid[x])):
 			grid[x][y] = Node(parkingI[x][y].point, parkingI[x][y].cat, parkingI[x][y].order)
-	path = aStar(grid[initial.point[0]][initial.point[1]], grid[final.point[0]][final.point[1]])
 
-	print len(path) - 1
+	print "Starting A* in ", initial.point, " ", final.point
+	path = aStar(grid[initial.point[0]][initial.point[1]], grid[final.point[0]][final.point[1]], grid)
+
+	print "Path length:", len(path) - 1
+	print "Path:"
 	for node in path:
 		x, y = node.point
 		print x, y
@@ -106,35 +130,47 @@ for line in initialConfiguration:
 	data.append(lineValues)
 
 initialConfiguration.close()
-
+print M, N
+print data
 parkingI = []
 
-for x in xrange(M-1):
-	for y in xrange(N-1):
-		parkingI[M][N] = Car((x,y), data[x][y][0], data[x][y][1])
+for x in range(M):
+	aux = []
+	for y in range(N):
+		aux.append(Car((x,y), data[x][y][0], data[x][y][1]))
+	parkingI.append(aux)
 
 finalConfiguration = open(sys.argv[2], 'r')
 
 dimensions = finalConfiguration.readline().split()
 
-if dimensions[0] != M or dimensions[1] != N:
+if int(dimensions[0]) != M or int(dimensions[1]) != N:
 	raise ValueError('Different dimensions between files')
 
 data = []
 
 for line in finalConfiguration:
-	lineValues = [string(i) for i in line.split()]
+	lineValues = [str(i) for i in line.split()]
 	data.append(lineValues)
 
 finalConfiguration.close()
-
-parkingdF = []
-
-
-for x in xrange(M-1):
-	for y in xrange(N-1):
-		parkingF[M][N] = Car((x,y), data[x][y][0], data[x][y][1])
+print data
+parkingF = []
 
 
+grid = parkingI
 
+for x in range(M):
+	aux = []
+	for y in range(N):
+		aux.append(Car((x,y), data[x][y][0], data[x][y][1]))
+	parkingF.append(aux)
+
+for x in range(M):
+	for y in range(N):
+		for i in range(M):
+			for j in range(N):
+				if parkingI[x][y].cat == parkingF[i][j].cat and parkingI[x][y].order == parkingF[i][j].order and parkingI[x][y].cat != '_' and parkingF[i][j].cat != '_':
+					if (x,y) != (i,j):
+						next_move(parkingI[x][y], parkingF[i][j], grid)
 
