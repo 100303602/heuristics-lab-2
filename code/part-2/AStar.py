@@ -7,53 +7,84 @@ class Car:
 		self.order = order
 
 class Node:
-	def __init__(self, point, cat, order):
-		self.cat = cat
-		self.order = order
-
-		self.point = point
+	def __init__(self, parking):
+		self.parking = parking
 		self.parent = None
 		self.H = 0
 		self.G = 0
 
-	def move_cost(self, final):
+	def move_cost(self, child):
 		cost = 0
-		if self.point[0] == final.point[0]:
-			if self.point[1] < final.point[1]:
-				cost = 1
-			else:
-				cost = 2
-		elif final.point[1] == 0:
-				cost = 3
-		elif final.point[1] == (N-1):
-				cost = 4
-			
+		for x in xrange(M):
+			for y in xrange(N):
+				for i in xrange(M):
+					for j in xrange(N):
+						if self.parking[x][y].cat == child.parking[i][j].cat and self.parking[x][y].order == child.parking[i][j].order and self.parking[x][y].cat != '_' and child.parking[i][j].cat != '_':
+							if (x,y) != (i,j):	
+								if self.parking[x][y].point[0] == child.parking[i][j].point[0] and self.parking[x][y].point[1] == self.parking[i][j].point[1]:
+									localCost = 0
+								elif self.parking[x][y].point[1] == 0 and self.parking[i][j].point[1] != child.parking[i][j].point[0] and child.parking[i][j].point[1] == 0:
+									localCost = 3
+								elif self.parking[x][y].point[1] == N and self.parking[i][j].point[1] != child.parking[i][j].point[0] and child.parking[i][j].point[1] == N:
+									localCost = 4
+								elif self.parking[x][y].point[1] > 0 and self.parking[x][y].point[1] < N and child.parking[i][j].point[1] == 0 and child.parking[i][j].point[0] != self.parking[i][j].point[0]:
+									localCost = 2								
+								elif self.parking[x][y].point[1] > 0 and self.parking[x][y].point[1] < N and child.parking[i][j].point[1] == N and child.parking[i][j].point[0] != self.parking[i][j].point[0]:
+									localCost = 1									
+								cost += localCost
 		return cost
 
 def manhattan(pos1, pos2):
 	return abs(pos1.point[0] - pos2.point[0]) + abs(pos1.point[1] - pos2.point[1])
 
 def children(car, grid):
+	for i in xrange(M+1):
+		
 	x,y = car.point
 	print "Children:", x ,y
-	if x == 0 and y == 0:
-		links = [grid[d[0]][d[1]] for d in [(x,y + 1),(x+1,y)]]
-	elif x == 0 and y == (N-1):
-		links = [grid[d[0]][d[1]] for d in [(x+1,y),(x,y - 1)]]
-	elif x == 0 and y != 0 and y != (N-1):
-		links = [grid[d[0]][d[1]] for d in [(x,y + 1),(x+1,y),(x,y -1)]]
-	elif x == (M-1) and y == 0:
-		links = [grid[d[0]][d[1]] for d in [(x-1,y),(x,y+1)]]
-	elif x == (M-1) and y == (N-1):
-		links = [grid[d[0]][d[1]] for d in [(x-1,y),(x,y-1)]]
-	elif x == (M-1) and y != 0 and y != (N-1):
-		links = [grid[d[0]][d[1]] for d in [(x-1,y),(x,y+1),(x,y-1)]]
-	elif x != (M-1) and x != 0 and y == (N-1):
-		links = [grid[d[0]][d[1]] for d in [(x-1,y),(x+1,y),(x,y-1)]]
-	elif y == 0  and x != 0 and x != (M-1):
-		links = [grid[d[0]][d[1]] for d in [(x-1,y),(x+1,y),(x,y+1)]]
-	else:
-		links = [grid[d[0]][d[1]] for d in [(x-1, y),(x,y - 1),(x,y + 1),(x+1,y)]]
+
+	if y > 0 and y < N:
+		a = N-y
+		for i in xrange(a+1):
+			links.append(grid[x][y+i])
+
+		b = y
+		for i in xrange(b+1):
+			links.append(grid[x][y-i])
+
+	if y == 0:
+		a = N
+		for i in xrange(a+1):
+			links.append(grid[x][y+i])
+	
+		b = M-x
+		for i in xrange(b+1):
+			links.append(grid[x+i][y])
+
+		c = x
+		for i in xrange(c+1):
+			links.append(grid[x-i][y])
+
+		d = M
+		for i in xrange(d):
+			links.append(grid[d][N-1])
+		
+	if y == N:
+		a = N
+		for i in xrange(a+1):
+			links.append(grid[x][y-i])
+	
+		b = M-x
+		for i in xrange(b+1):
+			links.append(grid[x+i][y])
+
+		c = x
+		for i in xrange(c+1):
+			links.append(grid[x-i][y])
+
+		d = M
+		for i in xrange(d):
+			links.append(grid[d][0])
 
 	print "Links:", links
 	return [link for link in links if link.cat == '_']
