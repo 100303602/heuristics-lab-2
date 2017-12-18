@@ -84,10 +84,10 @@ public class SATParking {
 		BooleanVar[][][] lowerWaitingTime = new BooleanVar[M][N][2];
 
 		for (int i=0; i<M; i++) for (int j=1; j<N-1; j++) for (int k=left; k<=right; k++) {
-			String variableDescription = "car" + (k==left ? "Left" : "Right") + "To(" + i + "," + j +")";
-			before[i][j][k]            = new BooleanVar(store, variableDescription + "EnteredTheLaneBefore");
-			sameCategory[i][j][k]      = new BooleanVar(store, variableDescription + "HasTheSameCategory");
-			lowerWaitingTime[i][j][k]  = new BooleanVar(store, variableDescription + "HasLowerWaitingTime");
+			String variableDescription = (k==left ? "L" : "R") + "(" + i + "," + j + "," + ")";
+			before[i][j][k]            = new BooleanVar(store, "b" + variableDescription + ")");
+			sameCategory[i][j][k]      = new BooleanVar(store, "s" + variableDescription + ")");
+			lowerWaitingTime[i][j][k]  = new BooleanVar(store, "l" + variableDescription + ")");
 		}
 
 		// Collect all the variables for the SimpleSelect

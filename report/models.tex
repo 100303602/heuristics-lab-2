@@ -1,3 +1,4 @@
+
 \chapter{Models Description}
 \label{chapter: models description}
 
@@ -13,6 +14,58 @@
 \section{Part 1: SAT verification of the parking configuration}
 
 \paragraph{}
+For this part we had to refrain ourselves from the temptation of modelling the problem as an assignment of cars to park positions, since these positions were already fixed. Instead, we have to somehow \textit{check} that an (already present) assignment was correct. In other words, the configuration read from the input file should not be changed; JaCoP should not decide which values to assign to the boolean variables that describe the parking. We have to make these values \textit{fixed}, expressing this with propositional logic. One way we thought to solve this problem is to include this information as disjunctions of only one literal, and adding each one them to the CNF with a conjunction.
+
+\subsection{Variables}
+
+\paragraph{}
+For the sake of readability, the notation \textit{car at position $i,j$} denotes a car located at lane $i$ and position $j$.
+\begin{itemize}
+  \item $b^{L)}_{ij}$ car located at the left of position $i,j$ entered the lane before car at position $i,j$
+  \item $b^{R)}_{ij}$ car located at the left of position $i,j$ entered the lane before car at position $i,j$
+  \item $s^{L)}_{ij}$ car located at the left of position $i,j$ entered the lane before car at position $i,j$
+  \item $s^{R)}_{ij}$ car located at the left of position $i,j$ entered the lane before car at position $i,j$
+  \item $l^{L)}_{ij}$ car located at the left of position $i,j$ entered the lane before car at position $i,j$
+  \item $l^{R)}_{ij}$ car (or empty place)
+  \item $c_{ij}$: there is a car located at lane $i$ and park position $j$
+\end{itemize}
+
+\subsection{Propositional formula}
+
+\paragraph{}
+The formula can be divided in two clear parts: the part that describes the parking with 1-variable clauses, and the part that forces that no car is blocked. It should be noticed that this formula is going to have different literals depending on the loaded input file.
+
+\paragraph{}
+Therefore we get the following propositional formula:
+\begin{equation}
+  \left(
+  \bigand{\substack{i \in N,\\ j \in (0, N-1)}}l^{L)}_{ij} \lor (s^{L)}_{ij} \land b^{L)}_{ij}) \lor l^{R)}_{ij} \lor l^{R)}_{ij} \lor (s^{R)}_{ij} \lor b^{R)}_{ij}) \right)
+  \bigand{\substack{
+      \alpha \in\\
+      B^{L)} \cup
+      B^{R)} \cup \\
+      S^{L)} \cup
+      S^{R)} \cup \\
+      L^{L)} \cup
+      L^{R)} \cup \\
+      C
+    }}
+    \alpha
+\end{equation}
+where
+\begin{itemize}
+  \item $B^{L)}$: matrix containing literals $b^{L)}_{ij}$ or $\neg b^{L)}_{ij}$ as loaded from the input file
+  \item $B^{R)}$: matrix containing literals $b^{R)}_{ij}$ or $\neg b^{R)}_{ij}$ as loaded from the input file
+  \item $S^{L)}$: matrix containing literals $s^{L)}_{ij}$ or $\neg s^{L)}_{ij}$ as loaded from the input file
+  \item $S^{R)}$: matrix containing literals $s^{R)}_{ij}$ or $\neg s^{R)}_{ij}$ as loaded from the input file
+  \item $L^{L)}$: matrix containing literals $l^{L)}_{ij}$ or $\neg l^{L)}_{ij}$ as loaded from the input file
+  \item $L^{R)}$: matrix containing literals $l^{R)}_{ij}$ or $\neg l^{R)}_{ij}$ as loaded from the input file
+  \item $C$: matrix containing literals $c_{ij}$ or $\neg c_{ij}$ as loaded from the input file
+\end{itemize}
+
+\paragraph{}
+Notice we are not considering cars located in the edges of the parking, since they are not blocked by definition. This lowers the number of boolean variables that JaCoP is going to process in the end, resulting in lower computing time.
+
 \warning{Alvaro}{Completar}
 
 %----------------------------------------- PART 2 --------------------------------------------------
@@ -33,7 +86,6 @@
 
 \paragraph{}
 \warning{Alvaro}{Completar}
-
 
 \subsection{Final state(s)}
 
