@@ -13,14 +13,19 @@
 \usepackage[usenames, dvipsnames]{xcolor}
 \usepackage[top=2cm, margin=2.5cm]{geometry}
 \usepackage{titlepic}
+\usepackage{mathtools}
+
 % \usepackage{eurosym}
 
 \graphicspath{{images/}}
 \newcommand{\warning}[2] {
     \textcolor{red}{(#1) #2}
 }
-% \let\texteuro\euro
-
+\let \smalland \land
+\let \smallor \lor
+\newcommand{\bigand}[1] {\bigwedge_{#1}}
+\newcommand{\bigor}[1] {\bigvee_{#1}}
+\newcolumntype{M}[1]{>{\centering\arraybackslash}m{#1\textwidth}}
 
 
 
