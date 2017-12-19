@@ -206,7 +206,7 @@ public class SATParking {
 		if (result) {
 			BufferedWriter out = null;
 			try {
-				FileWriter fstream = new FileWriter(args[0].substring(0, args[0].length() - ".input".length()) + "_parte1.output");
+				FileWriter fstream = new FileWriter(args[0].substring(0, args[0].length() - ".input".length()) + ".output");
 				out = new BufferedWriter(fstream);
 				for (int i=0; i<M; i++) {
 					for (int j=0; j<N; j++) {
