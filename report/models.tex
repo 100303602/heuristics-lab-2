@@ -13,7 +13,16 @@
 \section{Part 1: SAT verification of the parking configuration}
 
 \paragraph{}
-For this part we had to refrain ourselves from the temptation of modelling the problem as an assignment of cars to park positions, since these positions were already fixed. Instead, we have to somehow \textit{check} that an (already present) assignment was correct. In other words, the configuration read from the input file should not be changed; JaCoP should not decide which values to assign to the boolean variables that describe the parking. We have to make these values \textit{fixed}, expressing this with propositional logic. One way we thought to solve this problem is to include this information as disjunctions of only one literal, and adding each one them to the CNF with a conjunction.
+For this part we had to refrain ourselves from the temptation of modelling the
+problem as an assignment of cars to park positions, since these positions were
+already fixed. Instead, we have to somehow \textit{check} that an (already
+present) assignment was correct. In other words, the configuration read from the
+input file should not be changed; JaCoP should not decide which values to assign
+to the boolean variables that describe the parking. We have to make these values
+\textit{fixed}, expressing this with propositional logic. One way we thought to
+solve this problem is to include this information as disjunctions of only one
+literal, and adding each one them to the CNF with a conjunction.
+
 
 \subsection{Variables}
 
@@ -22,7 +31,7 @@ Variables have been defined as follows:
 \begin{itemize}
   \item $c_{ij}$: there is a car at lane $i$ and position $j$
   \item $b^{d)}_{ij}$: car adjacent to that at $i,j$ entered the lane before
-  \item $s^{d)}_{ij}$: car adjacent to that at $i,j$ has a category with the same waiting time 
+  \item $s^{d)}_{ij}$: car adjacent to that at $i,j$ has a category with the same waiting time
   \item $l^{d)}_{ij}$: car adjacent to that at $i,j$ has a category with lower waiting time
 \end{itemize}
 Where $d \in {L,R}$. $L$ represents information about the adjacent car at the left of car at $i,j$, and $R$ represents information about the adjacent car at the right of car at $i,j$.
@@ -86,27 +95,51 @@ Notice that the formula does not check literals related to the sides of the park
 
 \section{Part 2: Heuristic Search}
 
+\paragraph{}
+In this problem we are asked to move cars in a parking with an initial
+configuration to get to a final configuration given.
+
+For solving this problem, we have used a Python implementation of the well-known
+A* algorithm. This is an algorithm of heuristic search. In the following
+sections the model and parameters used are explained.
+
 \subsection{States}
 
 \paragraph{}
-\warning{Guille}{Completar}
+We have decided to use parking configurations as states for the A* heuristic
+search algorithm.
+Each state of the problem is a different configuration of the cars in the parking
+provided.
+
 
 \subsection{Operators}
 
 \paragraph{}
-\warning{Guille}{Completar}
+When expanding a node, we calculate all the possible movements of the cars in
+the parking. For each possible movement of each car, one node is generated. This
+node contains the map after each movement. This is done by 'children' function,
+that returns the child nodes after expanding a given node.
 
-\subsection{Initial state(s)}
+Also, each movement has associated a cost for performing it. When a operator is
+used, the cost (G) is saved.
+
+\subsection{Initial state}
 
 \paragraph{}
-\warning{Guille}{Completar}
+The initial state corresponds to the initial configuration of the parking
+(a.k.a. first input file).
+We save the data of this file in a matrix of Car objects.
 
-\subsection{Final state(s)}
+\subsection{Final state}
 
 \paragraph{}
-\warning{Guille}{Completar}
+The final state corresponds to the final configuration of the parking
+(a.k.a. second input file).
+
 
 \subsection{Heuristic function}
 
 \paragraph{}
-\warning{Guille}{Completar}
+We have used Manhattan distance as the heuristic function. This is based on the
+sum of each distance of the current position of each car to its final position.
+The distance is based on a strictly horizontal and/or vertical path.
