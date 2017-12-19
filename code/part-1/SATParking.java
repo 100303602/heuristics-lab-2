@@ -21,14 +21,20 @@ import org.jacop.search.SmallestDomain;
 
 
 public class SATParking {
+
+	// Class representing a car object. It is used to set up the problem for JaCoP.
 	public static class Car {
+		// attributes
 		private char category;
 		private int arrivalTime;
 		public static HashMap<Character,Float> waitingTimes;
 
+		// constructor
 		public Car (char category, int arrivalTime) {
 			this.category    = category;
 			this.arrivalTime = arrivalTime;
+
+			// this hashmap allows to easily add new categories and / or changing waiting times for a given category.
 			this.waitingTimes = new HashMap<Character, Float>();
 			this.waitingTimes.put('A', 0.5f);
 			this.waitingTimes.put('B', 2f);
@@ -36,22 +42,26 @@ public class SATParking {
 			this.waitingTimes.put('_', -1f);
 		}
 
+		// getters and setters
 		public char getCategory () { return this.category; }
-
 		public float getWaitingTime () { return this.waitingTimes.get(this.category); }
-
 		public int getArrivalTime () { return this.arrivalTime; }
 	}
 
 	public static void main(String args[]) {
+		// name of the .input file to load
 		String inputFileName = args[0];
+		// number of parking lanes
 		int M = 0;
+		// number of parking positions within a given parking lane
 		int N = 0;
 		Car [][] cars = null;
 
+		// convenience variables for representing left and right directions
 		final int left  = 0;
 		final int right = 1;
 
+		// load parking lot data from the .input file
 		try {
 			FileReader fileReader = new FileReader(inputFileName);
 			BufferedReader bufferedReader = new BufferedReader(fileReader);
@@ -84,7 +94,7 @@ public class SATParking {
 		// current parking position contains a car (that is, it's not empty)
 		BooleanVar[][] isCar = new BooleanVar[M][N];
 
-
+		// create description strings for the boolean variables
 		String variableDescription;
 		for (int i=0; i<M; i++) for (int j=1; j<N-1; j++) {
 			variableDescription = "(" + i + "," + j + ")";
@@ -130,6 +140,7 @@ public class SATParking {
 			}
 		}
 
+		// add unitary clauses representing parking lot information
 		int currentCategory, currentArrivalTime, adjacentCategory, adjacentArrivalTime;
 		float currentWaitingTime, adjacentWaitingTime;
 		int side = 0;
@@ -174,7 +185,7 @@ public class SATParking {
 			}
 		}
 
-		// Add all clauses
+		// Add clauses that check for blocked cars
 		for (int i=0; i<M; i++) for (int j=1; j<N-1; j++) for (int k=left; k<=right; k++) {
 			addClause(satWrapper, lowerWaitingTimeLiterals[i][j][0], lowerWaitingTimeLiterals[i][j][1], sameCategoryLiterals[i][j][0], sameCategoryLiterals[i][j][1]);
 			addClause(satWrapper, lowerWaitingTimeLiterals[i][j][0], lowerWaitingTimeLiterals[i][j][1], sameCategoryLiterals[i][j][0], beforeLiterals[i][j][1]);
@@ -191,6 +202,7 @@ public class SATParking {
 
 		System.out.println(result ? "No cars are blocked." : "One or more cars are bloqued.");
 
+		// generate output file with cars exit directions
 		if (result) {
 			BufferedWriter out = null;
 			try {
@@ -198,7 +210,6 @@ public class SATParking {
 				out = new BufferedWriter(fstream);
 				for (int i=0; i<M; i++) {
 					for (int j=0; j<N; j++) {
-						//if (isCar[i][j] != null  && isCar[i][j].dom().value() == 1) {
 						if (cars[i][j].getCategory() != '_') {
 							if (j == 0)
 								out.write('<');
