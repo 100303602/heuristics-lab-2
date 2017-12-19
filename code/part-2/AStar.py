@@ -22,7 +22,6 @@ class Node:
 			for y in range(N):
 				for i in range(M):
 					for j in range(N):
-
 						if self.parking[x][y].cat == child.parking[i][j].cat and self.parking[x][y].order == child.parking[i][j].order and self.parking[x][y].cat != '_' and child.parking[i][j].cat != '_':
 							if (x,y) != (i,j):
 								if self.parking[x][y].point[0] == child.parking[i][j].point[0] and self.parking[x][y].point[1] == self.parking[i][j].point[1]:
@@ -52,116 +51,131 @@ def calculateH(map1, map2):
 def manhattan(pos1, pos2):
 	return abs(pos1.point[0] - pos2.point[0]) + abs(pos1.point[1] - pos2.point[1])
 
-def children(node, grid): #Aqui hay que devolver objetos Node(mapas) no coches. Para ello hay que cambiar de posicion el coche
+def children(node, grid):
 	links = []
 	for j in range(M):
 		for k in range(N):
+			if node.parking[j][k].cat == '_': continue
 			x,y = node.parking[j][k].point
 			#print("Children:", x ,y)
-			aux = node.parking[j][k]
+			currentNodeCopy = copy.deepcopy(node.parking[j][k])
 
+			# car to be moved not located in an edge
 			if y > 0 and y < N:
-				a = N-y
-				for i in range(a):
-					if i != 0 and grid.parking[x][y+i].cat != '_': break
+				blocksToMoveRight = N-y
+				for i in range(blocksToMoveRight):
+					if i == 0: continue
+					if grid.parking[x][y+i].cat != '_': break
 					auxGrid1 = copy.deepcopy(grid)
 					auxGrid1.parking[x][y].cat = '_'
 					auxGrid1.parking[x][y].order = '_'
-					auxGrid1.parking[x][y+i] = aux
+					auxGrid1.parking[x][y+i] = currentNodeCopy
 					links.append(auxGrid1)
 
-				b = y
-				for i in range(b+1):
-					if i != 0 and grid.parking[x][y-i].cat != '_': break
+				blocksToMoveLeft = y
+				for i in range(blocksToMoveLeft+1):
+					if i == 0: continue
+					if grid.parking[x][y-i].cat != '_': break
 					auxGrid2 = copy.deepcopy(grid)
 					auxGrid2.parking[x][y].cat = '_'
 					auxGrid2.parking[x][y].order = '_'
-					auxGrid2.parking[x][y-i] = aux
+					auxGrid2.parking[x][y-i] = currentNodeCopy
 					links.append(auxGrid2)
 
-			if y == 0:
-				a = N
-				for i in range(a):
-					if i != 0 and grid.parking[x][y+i].cat != '_': break
+			# car to be moved located in the left edge
+			elif y == 0:
+				blocksToMoveRight = N
+				for i in range(blocksToMoveRight):
+					if i == 0: continue
+					if grid.parking[x][y+i].cat != '_': break
 					auxGrid3 = copy.deepcopy(grid)
 					auxGrid3.parking[x][y].cat = '_'
 					auxGrid3.parking[x][y].order = '_'
-					auxGrid3.parking[x][y+i] = aux
+					auxGrid3.parking[x][y+i] = currentNodeCopy
 					links.append(auxGrid3)
 
 				b = M-x
 				for i in range(b):
-					if i != 0 and grid.parking[x+i][y].cat != '_': break
+					if i == 0: continue
+					if grid.parking[x+i][y].cat != '_': continue
 					auxGrid4 = copy.deepcopy(grid)
 					auxGrid4.parking[x][y].cat = '_'
 					auxGrid4.parking[x][y].order = '_'
-					auxGrid4.parking[x+i][y] = aux
+					auxGrid4.parking[x+i][y] = currentNodeCopy
 					#links.append(grid.parking[x+i][y])
 					links.append(auxGrid4)
 
 				c = x
-				for i in range(c+1):
-					if i != 0 and grid.parking[x-i][y].cat != '_': break
+				for i in range(c):
+					if i == 0: continue
+					if grid.parking[x-i][y].cat != '_': continue
 					auxGrid5 = copy.deepcopy(grid)
 					auxGrid5.parking[x][y].cat = '_'
 					auxGrid5.parking[x][y].order = '_'
-					auxGrid5.parking[x-i][y] = aux
+					auxGrid5.parking[x-i][y] = currentNodeCopy
 					#links.append(grid.parking[x-i][y])
 					links.append(auxGrid5)
 
 				d = M
 				for i in range(d):
-					if i != 0 and grid.parking[d-1][N-1].cat != '_': break
+					if i == 0: continue
+					if grid.parking[d-1][N-1].cat != '_': continue
 					auxGrid6 = copy.deepcopy(grid)
 					auxGrid6.parking[x][y].cat = '_'
 					auxGrid6.parking[x][y].order = '_'
-					auxGrid6.parking[d-1][N-1] = aux
+					auxGrid6.parking[d-1][N-1] = currentNodeCopy
 					#links.append(grid.parking[d-1][N-1])
 					links.append(auxGrid6)
 
-			if y == N:
+			# car located in the right edge
+			else:
 				a = N
-				for i in range(a+1):
-					if i != 0 and grid.parking[x][y-i].cat != '_': break
+				for i in range(a):
+					if i == 0: continue
+					if grid.parking[x][y-i].cat != '_': break
 					auxGrid7 = copy.deepcopy(grid)
 					auxGrid7.parking[x][y].cat = '_'
 					auxGrid7.parking[x][y].order = '_'
-					auxGrid7.parking[x][y-i] = aux
+					auxGrid7.parking[x][y-i] = currentNodeCopy
 					#links.append(grid.parking[x][y-i])
 					links.append(auxGrid7)
 
 				b = M-x
-				for i in range(b+1):
-					if i != 0 and grid.parking[x+i][y].cat != '_': break
+				for i in range(b):
+					if i == 0: continue
+					if grid.parking[x+i][y].cat != '_': continue
 					auxGrid8 = copy.deepcopy(grid)
 					auxGrid8.parking[x][y].cat = '_'
 					auxGrid8.parking[x][y].order = '_'
-					auxGrid8.parking[x+i][y] = aux
+					auxGrid8.parking[x+i][y] = currentNodeCopy
 					#links.append(grid.parking[x+i][y])
 					links.append(auxGrid8)
 
 				c = x
-				for i in range(c+1):
-					if i != 0 and grid.parking[x-i][y].cat != '_': break
+				for i in range(c):
+					if i == 0: continue
+					if grid.parking[x-i][y].cat != '_': continue
 					auxGrid9 = copy.deepcopy(grid)
 					auxGrid9.parking[x][y].cat = '_'
 					auxGrid9.parking[x][y].order = '_'
-					auxGrid9.parking[x-i][y] = aux
+					auxGrid9.parking[x-i][y] = currentNodeCopy
 					#links.append(grid.parking[x-i][y])
 					links.append(auxGrid9)
 
 				d = M
 				for i in range(d):
-					if i != 0 and grid.parking[d][0].cat != '_': break
+					if i == 0: continue
+					if grid.parking[d][0].cat != '_': continue
 					auxGrid10 = copy.deepcopy(grid)
 					auxGrid10.parking[x][y].cat = '_'
 					auxGrid10.parking[x][y].order = '_'
-					auxGrid10.parking[d][0] = aux
+					auxGrid10.parking[d][0] = currentNodeCopy
 					#links.append(grid.parking[d][0])
 					links.append(auxGrid10)
 
 	#return [link for link in links if link.cat == '_']
 	#print([col.cat for col in link.parking for link in links]
+	print('Children states generated from current state:')
 	for a in links:
 		for x in range(M):
 			for y in range(N):
@@ -172,11 +186,12 @@ def children(node, grid): #Aqui hay que devolver objetos Node(mapas) no coches. 
 	return [link for link in links]
 
 
-def aStar(start, goal, grid):
+def aStar(start, goal):
 	closedSet = set()
 	openSet = set()
 
 	current = start
+	grid = current
 
 	openSet.add(current)
 
@@ -184,6 +199,16 @@ def aStar(start, goal, grid):
 		print ("OPENSET: ", len(openSet))
 		print ("CLOSEDSET: ", len(closedSet))
 		current = min(openSet, key=lambda o:o.G + o.H)
+
+		grid = current
+
+		print("CURRENT STATE:")
+		for x in range(M):
+			for y in range(N):
+				sys.stdout.write(current.parking[x][y].cat)
+				sys.stdout.write(current.parking[x][y].order)
+			print()
+
 
 		if nodeIsEqual(current, goal):
 			path = []
@@ -196,40 +221,34 @@ def aStar(start, goal, grid):
 		openSet.remove(current)
 
 		closedSet.add(current)
-		#for x in range(M):
-		#	for y in range(N):
-
 
 		for node in children(current, grid):
-			tramadol = 0
+			nodeIncluded = False
 			for i in closedSet:
 				if nodeIsEqual(node, i):
-					tramadol = 1
+					nodeIncluded = True
 			#if node in closedSet:
 			#	continue
-			if tramadol == 1:
-				print("TRAMADOOOOOL")
+			if nodeIncluded == True:
+				print("node already in closed")
 				continue
 
-
 			#if node in openSet:
-			tramadol = 0
+			nodeIncluded = False
 			for i in openSet:
 				if nodeIsEqual(node, i):
-					tramadol = 1
+					nodeIncluded = True
 
-			if tramadol == 1:
+			if nodeIncluded == True:
 				new_g = current.G + current.move_cost(node)
 				if node.G > new_g:
 					node.G = new_g
 					node.parent = current
 
-			if tramadol == 0:
+			if nodeIncluded == False:
 				node.G = current.G + current.move_cost(node)
 				node.H = calculateH(node, goal)
-
 				node.parent = current
-
 				openSet.add(node)
 
 	raise ValueError('No Path Found')
@@ -237,24 +256,27 @@ def aStar(start, goal, grid):
 def nodeIsEqual(node1, node2):
 	for x in range(M):
 		for y in range(N):
-			for i in range(M):
-				for j in range(N):
-					if node1.parking[x][y].cat == node2.parking[i][j].cat and node1.parking[x][y].order == node2.parking[i][j].order:
-						continue
-					else:
-						return False
+			if node1.parking[x][y].cat == node2.parking[x][y].cat and node1.parking[x][y].order == node2.parking[x][y].order:
+				continue
+			else:
+				return False
 	return True
 
-def next_move(initial, final, grid):
-	grid = initial
+def next_move(initial, final):
+	#grid = initial
 	print("Starting A*")
-	path = aStar(initial, final, grid)
+	path = aStar(initial, final)
 
 	print("Path length:", len(path) - 1)
 	print("Path:")
+
 	for node in path:
-		x, y = node.point
-		print(x, y)
+		for x in range(M):
+			for y in range(N):
+				sys.stdout.write(node.parking[x][y].cat)
+				sys.stdout.write(node.parking[x][y].order)
+			print()
+		print()
 
 initialConfiguration = open(sys.argv[1], 'r')
 
@@ -306,4 +328,4 @@ for x in range(M):
 		aux.append(Car((x,y), data[x][y][0], data[x][y][1]))
 	parkingF.append(aux)
 
-next_move(Node(parkingI), Node(parkingF), grid)
+next_move(Node(parkingI), Node(parkingF))
