@@ -97,9 +97,10 @@ Notice that the formula does not check literals related to the sides of the park
 
 \paragraph{}
 In this problem we are asked to move cars in a parking with an initial
-configuration to get to a final configuration given.
+configuration to get to a final configuration given. Cars can only perform
+specific moves.
 
-For solving this problem, we have used a Python implementation of the well-known
+For solving this problem, we have used a Python3 implementation of the well-known
 A* algorithm. This is an algorithm of heuristic search. In the following
 sections the model and parameters used are explained.
 
@@ -111,6 +112,9 @@ search algorithm.
 Each state of the problem is a different configuration of the cars in the parking
 provided.
 
+States are implemented as a class 'State', which includes a parking
+configuration, a reference to its parent node, H value and G value.
+
 
 \subsection{Operators}
 
@@ -120,8 +124,10 @@ the parking. For each possible movement of each car, one node is generated. This
 node contains the map after each movement. This is done by 'children' function,
 that returns the child nodes after expanding a given node.
 
-Also, each movement has associated a cost for performing it. When a operator is
-used, the cost (G) is saved.
+We want to point that only one movement of one car is allowed in a state change.
+
+Also, each movement has associated a cost for performing it following the
+statement requirements. When a operator is used, the cost (G) is saved.
 
 \subsection{Initial state}
 
@@ -140,6 +146,6 @@ The final state corresponds to the final configuration of the parking
 \subsection{Heuristic function}
 
 \paragraph{}
-We have used Manhattan distance as the heuristic function. This is based on the
-sum of each distance of the current position of each car to its final position.
-The distance is based on a strictly horizontal and/or vertical path.
+We have used Manhattan distance as the heuristic function. The distance is based
+on a strictly horizontal and/or vertical path. This is based on the sum of each
+distance of the current position of each car to its final position (H value).
