@@ -200,7 +200,7 @@ public class SATParking {
 		long endTime = System.currentTimeMillis();
 		Boolean result                       = search.labeling(store, select);
 
-		System.out.println(result ? "No cars are blocked." : "One or more cars are bloqued.");
+		System.out.println(result ? "No cars are blocked." : "One or more cars are blocked.");
 
 		// generate output file with cars exit directions
 		if (result) {
