@@ -47,7 +47,7 @@ public class SATParking {
 		String inputFileName = args[0];
 		int M = 0;
 		int N = 0;
-		Car [][] board = null;
+		Car [][] cars = null;
 
 		final int left  = 0;
 		final int right = 1;
@@ -58,13 +58,12 @@ public class SATParking {
 			String header = bufferedReader.readLine();
 			M = Integer.parseInt(header.split(" ")[0]);
 			N = Integer.parseInt(header.split(" ")[1]);
-			System.out.println("M:" + M + ", N:" + N + "\n");
-			board = new Car[M][N];
+			cars = new Car[M][N];
 
 			for (int i=0; i<M; i++) {
 				String[] line = bufferedReader.readLine().split(" ");
 				for (int j=0; j<line.length; j++)
-					board[i][j] = new Car(line[j].charAt(0), Character.getNumericValue(line[j].charAt(1)));
+					cars[i][j] = new Car(line[j].charAt(0), Character.getNumericValue(line[j].charAt(1)));
 			}
 		}
 		catch (FileNotFoundException ex) { System.out.println("File not found: '"     + inputFileName + "'"); }
@@ -82,74 +81,96 @@ public class SATParking {
 		BooleanVar[][][] sameCategory  = new BooleanVar[M][N][2];
 		// adjcent car's category has lower waiting time than the current car's category
 		BooleanVar[][][] lowerWaitingTime = new BooleanVar[M][N][2];
+		// current parking position contains a car (that is, it's not empty)
+		BooleanVar[][] isCar = new BooleanVar[M][N];
 
-		for (int i=0; i<M; i++) for (int j=1; j<N-1; j++) for (int k=left; k<=right; k++) {
-			String variableDescription = (k==left ? "L" : "R") + "(" + i + "," + j + "," + ")";
-			before[i][j][k]            = new BooleanVar(store, "b" + variableDescription + ")");
-			sameCategory[i][j][k]      = new BooleanVar(store, "s" + variableDescription + ")");
-			lowerWaitingTime[i][j][k]  = new BooleanVar(store, "l" + variableDescription + ")");
+
+		String variableDescription;
+		for (int i=0; i<M; i++) for (int j=1; j<N-1; j++) {
+			variableDescription = "(" + i + "," + j + ")";
+			isCar[i][j]                = new BooleanVar(store, "c" + variableDescription);
+			for (int k=left; k<=right; k++) {
+				variableDescription += (k==left ? "L" : "R");
+				before[i][j][k]            = new BooleanVar(store, "b" + variableDescription);
+				sameCategory[i][j][k]      = new BooleanVar(store, "s" + variableDescription);
+				lowerWaitingTime[i][j][k]  = new BooleanVar(store, "l" + variableDescription);
+			}
 		}
 
 		// Collect all the variables for the SimpleSelect
-		BooleanVar[] allVariables = new BooleanVar[(M*(N-2)*6)];
+		BooleanVar[] allVariables = new BooleanVar[(M*(N-2)*7)];
 		int m = 0;
 		for (int k=left; k<=right; k++) for (int i=0; i<M; i++) for (int j=1; j<N-1; j++, m++) allVariables[m] = before[i][j][k];
 		for (int k=left; k<=right; k++) for (int i=0; i<M; i++) for (int j=1; j<N-1; j++, m++) allVariables[m] = sameCategory[i][j][k];
 		for (int k=left; k<=right; k++) for (int i=0; i<M; i++) for (int j=1; j<N-1; j++, m++) allVariables[m] = lowerWaitingTime[i][j][k];
+		for (int i=0; i<M; i++) for (int j=1; j<N-1; j++, m++) allVariables[m] = isCar[i][j];
 
 		// Register all the variables in the SatWrapper
-		for (int i=0; i<M; i++) for (int j=1; j<N-1; j++) for (int k=left; k<=right; k++) {
-			satWrapper.register(before[i][j][k]);
-			satWrapper.register(sameCategory[i][j][k]);
-			satWrapper.register(lowerWaitingTime[i][j][k]);
+		for (int i=0; i<M; i++) for (int j=1; j<N-1; j++) {
+			satWrapper.register(isCar[i][j]);
+			for (int k=left; k<=right; k++) {
+				satWrapper.register(before[i][j][k]);
+				satWrapper.register(sameCategory[i][j][k]);
+				satWrapper.register(lowerWaitingTime[i][j][k]);
+			}
 		}
 
 		// Obtain non-negated literals out of the binary variables
 		int[][][] lowerWaitingTimeLiterals = new int[M][N][2];
 		int[][][] sameCategoryLiterals     = new int[M][N][2];
 		int[][][] beforeLiterals           = new int[M][N][2];
+		int[][]   isCarLiterals            = new int[M][N];
 
-		for (int i=0; i<M; i++) for (int j=1; j<N-1; j++) if(board[i][j] != null) for (int k=left; k<=right; k++) {
-			beforeLiterals[i][j][k]           = satWrapper.cpVarToBoolVar(before[i][j][k], 1, true);
-			sameCategoryLiterals[i][j][k]     = satWrapper.cpVarToBoolVar(sameCategory[i][j][k], 1, true);
-			lowerWaitingTimeLiterals[i][j][k] = satWrapper.cpVarToBoolVar(lowerWaitingTime[i][j][k], 1, true);
+		for (int i=0; i<M; i++) for (int j=1; j<N-1; j++) if(cars[i][j] != null) {
+			isCarLiterals[i][j] = satWrapper.cpVarToBoolVar(isCar[i][j], 1, true);
+			for (int k=left; k<=right; k++) {
+				beforeLiterals[i][j][k]           = satWrapper.cpVarToBoolVar(before[i][j][k], 1, true);
+				sameCategoryLiterals[i][j][k]     = satWrapper.cpVarToBoolVar(sameCategory[i][j][k], 1, true);
+				lowerWaitingTimeLiterals[i][j][k] = satWrapper.cpVarToBoolVar(lowerWaitingTime[i][j][k], 1, true);
+			}
 		}
 
 		int currentCategory, currentArrivalTime, adjacentCategory, adjacentArrivalTime;
 		float currentWaitingTime, adjacentWaitingTime;
 		int side = 0;
-		for (int i=0; i<M; i++) for (int j=1; j<N-1; j++) for (int k=left; k<=right; k++) {
-			if (k == left)
-				side = -1;
+		for (int i=0; i<M; i++) for (int j=1; j<N-1; j++) {
+			currentCategory     = cars[i][j].getCategory();
+			currentWaitingTime  = cars[i][j].getWaitingTime();
+			currentArrivalTime  = cars[i][j].getArrivalTime();
+			if (currentCategory != '_')
+				addClause(satWrapper, isCarLiterals[i][j]);
 			else
-				side = 1;
-			currentCategory     = board[i][j].getCategory();
-			currentWaitingTime  = board[i][j].getWaitingTime();
-			currentArrivalTime  = board[i][j].getArrivalTime();
-			adjacentCategory    = board[i][j+side].getCategory();
-			adjacentWaitingTime = board[i][j+side].getWaitingTime();
-			adjacentArrivalTime = board[i][j+side].getArrivalTime();
-			if (adjacentCategory != '_') {
-				if (adjacentCategory == currentCategory) {
-					addClause(satWrapper, sameCategoryLiterals[i][j][k]);
-					addClause(satWrapper, -lowerWaitingTimeLiterals[i][j][k]);
+				addClause(satWrapper, -isCarLiterals[i][j]);
+			for (int k=left; k<=right; k++) {
+				if (k == left)
+					side = -1;
+				else
+					side = 1;
+				adjacentCategory    = cars[i][j+side].getCategory();
+				adjacentWaitingTime = cars[i][j+side].getWaitingTime();
+				adjacentArrivalTime = cars[i][j+side].getArrivalTime();
+				if (adjacentCategory != '_') {
+					if (adjacentCategory == currentCategory) {
+						addClause(satWrapper, sameCategoryLiterals[i][j][k]);
+						addClause(satWrapper, -lowerWaitingTimeLiterals[i][j][k]);
+					}
+					else {
+						addClause(satWrapper, -sameCategoryLiterals[i][j][k]);
+						if (adjacentWaitingTime < currentWaitingTime)
+							addClause(satWrapper, lowerWaitingTimeLiterals[i][j][k]);
+						else
+							addClause(satWrapper, -lowerWaitingTimeLiterals[i][j][k]);
+					}
+					if (adjacentArrivalTime < currentArrivalTime)
+						addClause(satWrapper, beforeLiterals[i][j][k]);
+					else
+						addClause(satWrapper, -beforeLiterals[i][j][k]);
 				}
 				else {
-					addClause(satWrapper, -sameCategoryLiterals[i][j][k]);
-					if (adjacentWaitingTime < currentWaitingTime)
-						addClause(satWrapper, lowerWaitingTimeLiterals[i][j][k]);
-					else
-						addClause(satWrapper, -lowerWaitingTimeLiterals[i][j][k]);
-				}
-				if (adjacentArrivalTime < currentArrivalTime)
+					addClause(satWrapper, lowerWaitingTimeLiterals[i][j][k]);
+					addClause(satWrapper, sameCategoryLiterals[i][j][k]);
 					addClause(satWrapper, beforeLiterals[i][j][k]);
-				else
-					addClause(satWrapper, -beforeLiterals[i][j][k]);
-			}
-			else {
-				addClause(satWrapper, lowerWaitingTimeLiterals[i][j][k]);
-				addClause(satWrapper, sameCategoryLiterals[i][j][k]);
-				addClause(satWrapper, beforeLiterals[i][j][k]);
+				}
 			}
 		}
 
@@ -161,9 +182,11 @@ public class SATParking {
 			addClause(satWrapper, lowerWaitingTimeLiterals[i][j][0], lowerWaitingTimeLiterals[i][j][1], beforeLiterals[i][j][0], beforeLiterals[i][j][1]);
 		}
 
-		// Solve the problem
+		// Solve the problem and measure execution time
+		long startTime = System.currentTimeMillis();
 		Search<BooleanVar> search            = new DepthFirstSearch<BooleanVar>();
 		SelectChoicePoint<BooleanVar> select = new SimpleSelect<BooleanVar>(allVariables, new SmallestDomain<BooleanVar>(), new IndomainMin<BooleanVar>());
+		long endTime = System.currentTimeMillis();
 		Boolean result                       = search.labeling(store, select);
 
 		System.out.println(result ? "No cars are blocked." : "One or more cars are bloqued.");
@@ -175,7 +198,8 @@ public class SATParking {
 				out = new BufferedWriter(fstream);
 				for (int i=0; i<M; i++) {
 					for (int j=0; j<N; j++) {
-						if (board[i][j].getCategory() != '_') {
+						//if (isCar[i][j] != null  && isCar[i][j].dom().value() == 1) {
+						if (cars[i][j].getCategory() != '_') {
 							if (j == 0)
 								out.write('<');
 							else if (j == N-1)
@@ -197,6 +221,12 @@ public class SATParking {
 			catch (IOException e) {System.err.println("Error: " + e.getMessage());}
 		}
 		else System.out.println("No .output file has been generated as there was one or more cars blocked.");
+		System.out.println();
+
+		// extra information
+		System.out.println("M:" + M + ", N:" + N + ", size:" + M*N);
+		long totalTime = endTime - startTime;
+		System.out.println("Execution time (s): " + (totalTime/1000.0));
 		System.out.println();
 	}
 

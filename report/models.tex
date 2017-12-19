@@ -1,4 +1,3 @@
-
 \chapter{Models Description}
 \label{chapter: models description}
 
@@ -19,27 +18,24 @@ For this part we had to refrain ourselves from the temptation of modelling the p
 \subsection{Variables}
 
 \paragraph{}
-For the sake of readability, the notation \textit{car at position $i,j$} denotes a car located at lane $i$ and position $j$.
+Variables have been defined as follows:
 \begin{itemize}
-  \item $b^{L)}_{ij}$ car located at the left of position $i,j$ entered the lane before car at position $i,j$
-  \item $b^{R)}_{ij}$ car located at the left of position $i,j$ entered the lane before car at position $i,j$
-  \item $s^{L)}_{ij}$ car located at the left of position $i,j$ entered the lane before car at position $i,j$
-  \item $s^{R)}_{ij}$ car located at the left of position $i,j$ entered the lane before car at position $i,j$
-  \item $l^{L)}_{ij}$ car located at the left of position $i,j$ entered the lane before car at position $i,j$
-  \item $l^{R)}_{ij}$ car (or empty place)
-  \item $c_{ij}$: there is a car located at lane $i$ and park position $j$
+  \item $c_{ij}$: there is a car at lane $i$ and position $j$
+  \item $b^{d)}_{ij}$: car adjacent to that at $i,j$ entered the lane before
+  \item $s^{d)}_{ij}$: car adjacent to that at $i,j$ has a category with the same waiting time 
+  \item $l^{d)}_{ij}$: car adjacent to that at $i,j$ has a category with lower waiting time
 \end{itemize}
+Where $d \in {L,R}$. $L$ represents information about the adjacent car at the left of car at $i,j$, and $R$ represents information about the adjacent car at the right of car at $i,j$.
 
 \subsection{Propositional formula}
 
 \paragraph{}
-The formula can be divided in two clear parts: the part that describes the parking with 1-variable clauses, and the part that forces that no car is blocked. It should be noticed that this formula is going to have different literals depending on the loaded input file.
+The formula can be divided in two parts: the part that checks for blocked cars, and the part that represents the parking configuration by using 1-variable clauses. It should be noticed that literals in the formula may be non-negated ($b^L_{ij}$) or negated ($\neg b^d_{ij}$), depending on the input file configuration. Since it would be incorrect to include a single formula (as literals on the right are non-negated or negated depending on the input file), the following equation represents a group of formulas, hence the use of set notation for the right part.
 
 \paragraph{}
 Therefore we get the following propositional formula:
 \begin{equation}
-  \left(
-  \bigand{\substack{i \in N,\\ j \in (0, N-1)}}l^{L)}_{ij} \lor (s^{L)}_{ij} \land b^{L)}_{ij}) \lor l^{R)}_{ij} \lor l^{R)}_{ij} \lor (s^{R)}_{ij} \lor b^{R)}_{ij}) \right)
+  \bigand{\substack{i \in N,\\ j \in (0, N-1)}}l^{L)}_{ij} \lor (s^{L)}_{ij} \land b^{L)}_{ij}) \lor l^{R)}_{ij} \lor l^{R)}_{ij} \lor (s^{R)}_{ij} \lor b^{R)}_{ij})
   \bigand{\substack{
       \alpha \in\\
       B^{L)} \cup
@@ -55,7 +51,6 @@ Therefore we get the following propositional formula:
 where
 \begin{itemize}
   \item $B^{L)}$: matrix containing literals $b^{L)}_{ij}$ or $\neg b^{L)}_{ij}$ as loaded from the input file
-  \item $B^{R)}$: matrix containing literals $b^{R)}_{ij}$ or $\neg b^{R)}_{ij}$ as loaded from the input file
   \item $S^{L)}$: matrix containing literals $s^{L)}_{ij}$ or $\neg s^{L)}_{ij}$ as loaded from the input file
   \item $S^{R)}$: matrix containing literals $s^{R)}_{ij}$ or $\neg s^{R)}_{ij}$ as loaded from the input file
   \item $L^{L)}$: matrix containing literals $l^{L)}_{ij}$ or $\neg l^{L)}_{ij}$ as loaded from the input file
@@ -64,9 +59,28 @@ where
 \end{itemize}
 
 \paragraph{}
-Notice we are not considering cars located in the edges of the parking, since they are not blocked by definition. This lowers the number of boolean variables that JaCoP is going to process in the end, resulting in lower computing time.
+Turning this formula into CNF we get the following:
+\begin{equation}
+  \bigand{\substack{i \in N,\\ j \in (0, N-1)}}
+  (l^{L)}_{ij} \lor l^{R)}_{ij} \lor s^{L)}_{ij} \lor s^{R)}_{ij}) \land
+  (l^{L)}_{ij} \lor l^{R)}_{ij} \lor s^{L)}_{ij} \lor b^{R)}_{ij}) \land
+  (l^{L)}_{ij} \lor l^{R)}_{ij} \lor s^{R)}_{ij} \lor b^{L)}_{ij}) \land
+  (l^{L)}_{ij} \lor l^{R)}_{ij} \lor b^{L)}_{ij} \lor b^{R)}_{ij})
+  \bigand{\substack{
+      \alpha \in\\
+      B^{L)} \cup
+      B^{R)} \cup \\
+      S^{L)} \cup
+      S^{R)} \cup \\
+      L^{L)} \cup
+      L^{R)} \cup \\
+      C
+    }}
+    \alpha
+\end{equation}
 
-\warning{Alvaro}{Completar}
+\paragraph{}
+Notice that the formula does not check literals related to the sides of the parking lot, since these are never going to be blocked.
 
 %----------------------------------------- PART 2 --------------------------------------------------
 
@@ -75,24 +89,24 @@ Notice we are not considering cars located in the edges of the parking, since th
 \subsection{States}
 
 \paragraph{}
-\warning{Alvaro}{Completar}
+\warning{Guille}{Completar}
 
 \subsection{Operators}
 
 \paragraph{}
-\warning{Alvaro}{Completar}
+\warning{Guille}{Completar}
 
 \subsection{Initial state(s)}
 
 \paragraph{}
-\warning{Alvaro}{Completar}
+\warning{Guille}{Completar}
 
 \subsection{Final state(s)}
 
 \paragraph{}
-\warning{Alvaro}{Completar}
+\warning{Guille}{Completar}
 
 \subsection{Heuristic function}
 
 \paragraph{}
-\warning{Alvaro}{Completar}
+\warning{Guille}{Completar}
